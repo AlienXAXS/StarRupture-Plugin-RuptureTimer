@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Plugin">
+      <UniqueIdentifier>{D708A4F9-3B4B-4B89-928E-435E20A71F08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDK">
+      <UniqueIdentifier>{DEB2D002-7806-4E5A-8142-84BCD42D87E8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Config">
+      <UniqueIdentifier>{A1E0F2C4-0003-4A10-9A11-1C0F5B3D0003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wave">
+      <UniqueIdentifier>{A1E0F2C4-0004-4A10-9A11-1C0F5B3D0004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Net">
+      <UniqueIdentifier>{A1E0F2C4-0005-4A10-9A11-1C0F5B3D0005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Debug">
+      <UniqueIdentifier>{A1E0F2C4-0007-4A10-9A11-1C0F5B3D0007}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{A1E0F2C4-0006-4A10-9A11-1C0F5B3D0006}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(PluginSDKInclude)\plugin_interface.h">
+      <Filter>SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="$(PluginSDKInclude)\plugin_network_helpers.h">
+      <Filter>SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="plugin.h">
+      <Filter>Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="plugin_helpers.h">
+      <Filter>Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="config\plugin_config.h">
+      <Filter>Config</Filter>
+    </ClInclude>
+    <ClInclude Include="wave\wave_types.h">
+      <Filter>Wave</Filter>
+    </ClInclude>
+    <ClInclude Include="wave\wave_model.h">
+      <Filter>Wave</Filter>
+    </ClInclude>
+    <ClInclude Include="wave\wave_reader.h">
+      <Filter>Wave</Filter>
+    </ClInclude>
+    <ClInclude Include="net\wave_packet.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="net\wave_net.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\ui_theme.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\ui_draw.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\overlay_widget.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\diagnostics_window.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="plugin.cpp">
+      <Filter>Plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="config\plugin_config.cpp">
+      <Filter>Config</Filter>
+    </ClCompile>
+    <ClCompile Include="wave\wave_types.cpp">
+      <Filter>Wave</Filter>
+    </ClCompile>
+    <ClCompile Include="wave\wave_model.cpp">
+      <Filter>Wave</Filter>
+    </ClCompile>
+    <ClCompile Include="wave\wave_reader.cpp">
+      <Filter>Wave</Filter>
+    </ClCompile>
+    <ClCompile Include="net\wave_net.cpp">
+      <Filter>Net</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\ui_theme.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\ui_draw.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\overlay_widget.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\diagnostics_window.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="$(StarRuptureSDKSourceDir)Basic.cpp">
+      <Filter>SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="$(StarRuptureSDKSourceDir)CoreUObject_functions.cpp">
+      <Filter>SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="$(StarRuptureSDKSourceDir)Engine_functions.cpp">
+      <Filter>SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="$(StarRuptureSDKSourceDir)Chimera_functions.cpp">
+      <Filter>SDK</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

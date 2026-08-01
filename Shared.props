@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- ============================================================
+       Default paths for local development — sibling checkouts of
+       the Game SDK and Plugin SDK next to this repository.
+       Override in CI via /p:GameSDKRoot=... /p:PluginSDKInclude=...
+       ============================================================ -->
+  <PropertyGroup>
+    <GameSDKRoot Condition="'$(GameSDKRoot)' == ''">..\..\StarRupture-Game-SDK</GameSDKRoot>
+    <PluginSDKInclude Condition="'$(PluginSDKInclude)' == ''">..\..\StarRupture-Plugin-SDK\include</PluginSDKInclude>
+  </PropertyGroup>
+
+  <!-- ============================================================
+       StarRuptureSDKSourceDir
+       Points to the SDK subdirectory containing Basic.cpp,
+       CoreUObject_functions.cpp and Engine_functions.cpp.
+       ============================================================ -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Client Debug' Or '$(Configuration)' == 'Client Release'">
+    <StarRuptureSDKSourceDir>$(GameSDKRoot)\Client\SDK\</StarRuptureSDKSourceDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Server Debug' Or '$(Configuration)' == 'Server Release'">
+    <StarRuptureSDKSourceDir>$(GameSDKRoot)\Server\SDK\</StarRuptureSDKSourceDir>
+  </PropertyGroup>
+
+  <!-- ============================================================
+       StarRuptureSDKConfigDir
+       Additional include directories for Client/Server builds.
+       ============================================================ -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Client Debug' Or '$(Configuration)' == 'Client Release'">
+    <StarRuptureSDKConfigDir>$(GameSDKRoot)\Client\;$(GameSDKRoot)\Client\SDK\</StarRuptureSDKConfigDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Server Debug' Or '$(Configuration)' == 'Server Release'">
+    <StarRuptureSDKConfigDir>$(GameSDKRoot)\Server\;$(GameSDKRoot)\Server\SDK\</StarRuptureSDKConfigDir>
+  </PropertyGroup>
+
+  <!-- ============================================================
+       MODLOADER_CLIENT_BUILD / MODLOADER_SERVER_BUILD
+       ============================================================ -->
+  <ItemDefinitionGroup Condition="'$(Configuration)' == 'Client Debug' Or '$(Configuration)' == 'Client Release'">
+    <ClCompile>
+      <PreprocessorDefinitions>MODLOADER_CLIENT_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)' == 'Server Debug' Or '$(Configuration)' == 'Server Release'">
+    <ClCompile>
+      <PreprocessorDefinitions>MODLOADER_SERVER_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- ============================================================
+       MODLOADER_BUILD_TAG
+       Injected by CI via /p:ModLoaderBuildTag="vX.Y.Z".
+       Dev / local builds get no define -> fallback "dev" in plugin code.
+       ============================================================ -->
+  <ItemDefinitionGroup Condition="'$(ModLoaderBuildTag)' != ''">
+    <ClCompile>
+      <PreprocessorDefinitions>MODLOADER_BUILD_TAG="$(ModLoaderBuildTag)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+</Project>
