@@ -32,10 +32,13 @@
 *.app
 
 # Visual Studio
+# Anchored to the repo root: git ignores paths case-insensitively on Windows, so
+# an unanchored Debug/ also matches src/debug/. Build output goes to build/ and
+# obj/ anyway (see OutDir/IntDir in RuptureTimer.vcxproj).
 .vs/
-x64/
-Debug/
-Release/
+/x64/
+/Debug/
+/Release/
 *.vcxproj.user
 *.suo
 *.sdf
