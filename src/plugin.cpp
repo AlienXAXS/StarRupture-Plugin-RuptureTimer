@@ -147,13 +147,6 @@ static void OnWorldEndPlay(SDK::UWorld* world, const char* worldName)
 	Deactivate();
 }
 
-// Server-side: a joining player would otherwise wait out a whole broadcast
-// interval before seeing anything.
-static void OnPlayerJoined(void* playerController)
-{
-	WaveNet::SendSnapshotTo(playerController);
-}
-
 extern "C" {
 
 	__declspec(dllexport) PluginInfo* GetPluginInfo()
@@ -189,8 +182,10 @@ extern "C" {
 			hooks->World->RegisterOnAnyWorldBeginPlay(&OnWorldBeginPlay);
 			hooks->World->RegisterOnBeforeWorldEndPlay(&OnWorldEndPlay);
 
-			if (hooks->Players)
-				hooks->Players->RegisterOnPlayerJoined(&OnPlayerJoined);
+			// Nothing is hooked for joining players here: a snapshot sent at
+			// player-join is dropped, because the client has not reported itself
+			// to the loader yet. WaveNet drives that off the client-ready
+			// callback instead, which fires once that is actually true.
 
 			if (hooks->UI)
 				hooks->UI->RegisterOnConfigChanged(self, &OnConfigChanged);
@@ -246,8 +241,6 @@ extern "C" {
 				hooks->World->UnregisterOnAnyWorldBeginPlay(&OnWorldBeginPlay);
 				hooks->World->UnregisterOnBeforeWorldEndPlay(&OnWorldEndPlay);
 			}
-			if (hooks->Players)
-				hooks->Players->UnregisterOnPlayerJoined(&OnPlayerJoined);
 			if (hooks->UI)
 				hooks->UI->UnregisterOnConfigChanged(g_self, &OnConfigChanged);
 		}

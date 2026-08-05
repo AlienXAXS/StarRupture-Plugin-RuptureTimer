@@ -97,6 +97,7 @@ namespace RuptureTimer
 		case WaitReason::DetectingSession:    return "Detecting session type...";
 		case WaitReason::NoWorld:             return "Waiting for the world to load...";
 		case WaitReason::SubsystemUnresolved: return "Locating the wave subsystem...";
+		case WaitReason::LinkHandshake:       return "Connecting to the server...";
 		case WaitReason::NoServerData:        return "Waiting for server data...";
 		case WaitReason::LinkStale:           return "Server data has gone stale";
 		}

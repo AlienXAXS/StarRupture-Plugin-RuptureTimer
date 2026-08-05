@@ -7,9 +7,11 @@
 
 #include "plugin_network_helpers.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <mutex>
+#include <vector>
 
 namespace RuptureTimer
 {
@@ -27,9 +29,19 @@ namespace RuptureTimer
 		WaveSnapshot g_lastSentSnapshot;
 		bool         g_hasSentAnything = false;
 
+		// Authority side: the clients the loader will actually deliver to. A client
+		// only lands here once it has reported this plugin at this exact version,
+		// which is strictly later than the player-joined hook.
+		std::vector<void*> g_readyClients;
+
 		// Client side
-		bool     g_helloSent          = false;
-		float    g_helloRetryCooldown = 0.0f;
+		bool     g_serverReady         = false;
+		float    g_helloRetryCooldown  = 0.0f;
+
+		// Which readiness callbacks we currently hold, so the per-session teardown
+		// only unregisters what it registered.
+		bool g_clientReadyRegistered = false;
+		bool g_serverReadyRegistered = false;
 
 		PluginNetworkMessageCallback       g_waveHandler  = nullptr;
 		PluginNetworkServerMessageCallback g_helloHandler = nullptr;
@@ -185,6 +197,107 @@ namespace RuptureTimer
 			if (p.schemaVersion != kSchemaVersion) return;
 			WaveNet::SendSnapshotTo(senderPC);
 		}
+
+		void SendHello()
+		{
+			auto* self  = GetSelf();
+			auto* hooks = GetHooks();
+			if (!self || !hooks || !hooks->Network) return;
+
+			const RuptureHelloPacket hello{ kSchemaVersion, { 0, 0, 0 } };
+			Network::SendPacketToServer(hooks, self, hello);
+			g_helloRetryCooldown = kHelloRetrySeconds;
+		}
+
+		// Authority side. This is the first moment a packet to this client is not
+		// thrown away; the loader neither buffers nor replays, so the join-time
+		// snapshot has to be sent from here and from nowhere earlier.
+		void OnClientReady(void* playerController)
+		{
+			if (!playerController) return;
+
+			{
+				std::lock_guard<std::mutex> lk(g_mutex);
+				if (std::find(g_readyClients.begin(), g_readyClients.end(), playerController) == g_readyClients.end())
+					g_readyClients.push_back(playerController);
+				g_display.readyClients = static_cast<uint32_t>(g_readyClients.size());
+			}
+
+			// Outside the lock — the send path takes the same non-recursive mutex.
+			WaveNet::SendSnapshotTo(playerController);
+		}
+
+		void OnPlayerLeft(void* exitingController)
+		{
+			std::lock_guard<std::mutex> lk(g_mutex);
+			g_readyClients.erase(
+				std::remove(g_readyClients.begin(), g_readyClients.end(), exitingController),
+				g_readyClients.end());
+			g_display.readyClients = static_cast<uint32_t>(g_readyClients.size());
+		}
+
+		// Client side. Until this fires, nothing we send can arrive.
+		void OnServerReady(const char* serverBuildTag)
+		{
+			LOG_INFO("Server link ready (authority loader %s)",
+				serverBuildTag && serverBuildTag[0] ? serverBuildTag : "unknown");
+
+			g_serverReady = true;
+			{
+				std::lock_guard<std::mutex> lk(g_mutex);
+				g_display.serverLinkReady = true;
+			}
+
+			// The authority pushes a snapshot from its own client-ready callback,
+			// so this is belt and braces: it also covers an authority whose copy of
+			// the plugin came up without ever seeing us become ready.
+			SendHello();
+		}
+
+		// Which readiness signal matters depends on which side of the wire we turn
+		// out to be, and that is not known until the net mode resolves.
+		void EnsureReadinessWiring()
+		{
+			auto* self  = GetSelf();
+			auto* hooks = GetHooks();
+			if (!self || !hooks || !hooks->Network) return;
+
+			if (RoleHasAuthority(g_role))
+			{
+				// Standalone has no connections to be ready, and registering there
+				// only earns a "not the authority" warning from the loader.
+				if (g_role == SessionRole::Solo || g_clientReadyRegistered) return;
+
+				hooks->Network->RegisterClientReadyCallback(self, &OnClientReady);
+				if (hooks->Players)
+					hooks->Players->RegisterOnPlayerLeft(&OnPlayerLeft);
+				g_clientReadyRegistered = true;
+			}
+			else if (g_role == SessionRole::RemoteClient && !g_serverReadyRegistered)
+			{
+				hooks->Network->RegisterServerReadyCallback(self, &OnServerReady);
+				g_serverReadyRegistered = true;
+			}
+		}
+
+		void ClearReadinessWiring()
+		{
+			auto* self  = GetSelf();
+			auto* hooks = GetHooks();
+			if (self && hooks && hooks->Network)
+			{
+				if (g_clientReadyRegistered)
+				{
+					hooks->Network->UnregisterClientReadyCallback(self, &OnClientReady);
+					if (hooks->Players)
+						hooks->Players->UnregisterOnPlayerLeft(&OnPlayerLeft);
+				}
+				if (g_serverReadyRegistered)
+					hooks->Network->UnregisterServerReadyCallback(self, &OnServerReady);
+			}
+			g_clientReadyRegistered = false;
+			g_serverReadyRegistered = false;
+		}
 	}
 
 	void WaveNet::Initialize()
@@ -208,6 +321,8 @@ namespace RuptureTimer
 
 	void WaveNet::Shutdown()
 	{
+		ClearReadinessWiring();
+
 		auto* self  = GetSelf();
 		auto* hooks = GetHooks();
 		if (self && hooks && hooks->Network)
@@ -225,16 +340,21 @@ namespace RuptureTimer
 	{
 		WaveReader::InvalidateCache();
 
+		// Readiness is per-connection, so none of it survives a world change. The
+		// next tick re-resolves the role and re-registers what that role needs.
+		ClearReadinessWiring();
+
 		g_role               = SessionRole::Unresolved;
 		g_broadcastAccum     = 0.0f;
 		g_pollAccum          = 0.0f;
-		g_helloSent          = false;
+		g_serverReady        = false;
 		g_helloRetryCooldown = 0.0f;
 		g_hasSentAnything    = false;
 		g_lastSentSnapshot   = WaveSnapshot{};
 		g_lastPacketTime     = 0.0;
 
 		std::lock_guard<std::mutex> lk(g_mutex);
+		g_readyClients.clear();
 		g_display            = DisplayState{};
 		g_display.waitReason = WaitReason::DetectingSession;
 	}
@@ -245,6 +365,10 @@ namespace RuptureTimer
 		auto* hooks = GetHooks();
 		if (!self || !hooks || !hooks->Network || !playerController) return;
 		if (!RoleHasAuthority(g_role) || !g_hasSentAnything) return;
+
+		// The same predicate SendPacketToClient gates on. Checking it here keeps
+		// the sent counter honest instead of counting packets the loader drops.
+		if (!hooks->Network->IsClientReady(playerController, self)) return;
 
 		const RuptureWavePacket p = Encode(g_lastSentSnapshot, g_sequence);
 		Network::SendPacketToPlayer(hooks, self, playerController, p);
@@ -267,6 +391,7 @@ namespace RuptureTimer
 			{
 				g_role = resolved;
 				LOG_INFO("Session role resolved: %s", RoleName(g_role));
+				EnsureReadinessWiring();
 			}
 		}
 
@@ -342,55 +467,56 @@ namespace RuptureTimer
 		}
 
 		// ---- Remote client -----------------------------------------------------
-		auto* self = GetSelf();
-
-		if (!g_helloSent && self && hooks->Network)
-		{
-			RuptureHelloPacket hello{ kSchemaVersion, { 0, 0, 0 } };
-			Network::SendPacketToServer(hooks, self, hello);
-			g_helloSent          = true;
-			g_helloRetryCooldown = kHelloRetrySeconds;
-		}
-		else if (g_helloRetryCooldown > 0.0f)
-		{
+		if (g_helloRetryCooldown > 0.0f)
 			g_helloRetryCooldown -= deltaSeconds;
-		}
 
 		// Decide under the lock, send outside it. A handler reached by the send
 		// would try to take the same non-recursive mutex on this thread.
 		bool nudgeServer = false;
 		{
 			std::lock_guard<std::mutex> lk(g_mutex);
+			g_display.serverLinkReady = g_serverReady;
+
+			// Before the authority acknowledges us there is no link to be quiet:
+			// anything we send is dropped, and the silence is not the server's
+			// fault yet. Saying so beats blaming it for having no data.
+			if (!g_serverReady)
+			{
+				g_display.waitReason = WaitReason::LinkHandshake;
+				return;
+			}
 
 			if (!g_display.hasData)
 			{
 				g_display.waitReason = WaitReason::NoServerData;
-				return;
-			}
 
-			g_display.dataAgeSecs = static_cast<float>(NowSeconds() - g_lastPacketTime);
-			if (g_display.dataAgeSecs > cfg.staleAfterSeconds)
-			{
-				g_display.stale      = true;
-				g_display.waitReason = WaitReason::LinkStale;
-
-				// Nudge the server occasionally in case it restarted, or the
-				// plugin was hot-loaded there after we joined.
+				// A hello is how an authority that loaded the plugin after we
+				// joined finds out we want data. This retry used to live only in
+				// the stale branch below, which needs data we have never had — so
+				// a lost first hello was never retried at all.
 				nudgeServer = g_helloRetryCooldown <= 0.0f;
 			}
 			else
 			{
-				g_display.stale      = false;
-				g_display.waitReason = WaitReason::None;
+				g_display.dataAgeSecs = static_cast<float>(NowSeconds() - g_lastPacketTime);
+				if (g_display.dataAgeSecs > cfg.staleAfterSeconds)
+				{
+					g_display.stale      = true;
+					g_display.waitReason = WaitReason::LinkStale;
+
+					// Nudge the server occasionally in case it restarted.
+					nudgeServer = g_helloRetryCooldown <= 0.0f;
+				}
+				else
+				{
+					g_display.stale      = false;
+					g_display.waitReason = WaitReason::None;
+				}
 			}
 		}
 
-		if (nudgeServer && self && hooks->Network)
-		{
-			RuptureHelloPacket hello{ kSchemaVersion, { 0, 0, 0 } };
-			Network::SendPacketToServer(hooks, self, hello);
-			g_helloRetryCooldown = kHelloRetrySeconds;
-		}
+		if (nudgeServer)
+			SendHello();
 	}
 
 	DisplayState WaveNet::GetDisplayState()

@@ -55,6 +55,7 @@ namespace RuptureTimer
 		DetectingSession,     // net mode still Unknown
 		NoWorld,              // world/game state not up yet
 		SubsystemUnresolved,  // authority: UCrEnviroWaveSubsystem not found
+		LinkHandshake,        // client: loader link not acknowledged yet
 		NoServerData,         // client: never received a packet
 		LinkStale,            // client: last packet older than StaleAfterSeconds
 	};

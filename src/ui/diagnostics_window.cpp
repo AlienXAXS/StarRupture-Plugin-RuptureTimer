@@ -84,6 +84,13 @@ namespace RuptureTimer
 				Row(ui, "Stale", YesNo(st.stale));
 				RowF(ui, "Data age", "%.2f s", st.dataAgeSecs);
 				Row(ui, "Waiting on", st.waitReason == WaitReason::None ? "-" : WaitReasonText(st.waitReason));
+
+				// A peer that is not ready is not a valid packet target, so this is
+				// the first thing to check when nothing is arriving.
+				if (st.role == SessionRole::RemoteClient)
+					Row(ui, "Server link", st.serverLinkReady ? "ready" : "handshaking");
+				else if (st.role == SessionRole::ListenHost || st.role == SessionRole::DedicatedServer)
+					RowF(ui, "Ready clients", "%u", st.readyClients);
 				ui->EndTable();
 			}
 
