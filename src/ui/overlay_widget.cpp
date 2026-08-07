@@ -79,11 +79,12 @@ namespace RuptureTimer
 		{
 			// NoBackground matters: the card below is drawn by hand, so ImGui's own
 			// window frame would sit around it as a second, larger box.
+			// No NoSavedSettings: without an ini entry ImGui re-centres the card on
+			// every launch, so the player's placement has to survive in the ini.
 			int flags = PluginWindowFlags_NoTitleBar
 			          | PluginWindowFlags_NoResize
 			          | PluginWindowFlags_NoScrollbar
-			          | PluginWindowFlags_NoBackground
-			          | PluginWindowFlags_NoSavedSettings;
+			          | PluginWindowFlags_NoBackground;
 
 			// Unlocked leaves ImGui's move handling on, so the card can be dragged
 			// by its body whenever a cursor is up (i.e. the ModLoader window is open).
