@@ -31,7 +31,6 @@ namespace RuptureTimer
 			{ "Display", "ShowNetworkStatus",   ConfigValueType::Boolean, "true",  "Show the session role and data freshness indicator",     0.0f, 0.0f },
 			{ "Display", "ShowTimeSinceWave",   ConfigValueType::Boolean, "false", "Show how long ago the current wave started",             0.0f, 0.0f },
 			{ "Display", "CompactMode",         ConfigValueType::Boolean, "false", "Shrink the overlay to just the countdown",               0.0f, 0.0f },
-			{ "Display", "LockWindow",          ConfigValueType::Boolean, "false", "Pin the overlay in place so it cannot be dragged",       0.0f, 0.0f },
 			{ "Display", "AccentByWaveType",    ConfigValueType::Boolean, "true",  "Tint the overlay by wave type (ember for Heat, ice for Cold)", 0.0f, 0.0f },
 			{ "Display", "Scale",               ConfigValueType::Float,   "1.0",   "Overlay size multiplier",                                0.6f, 2.0f },
 			{ "Display", "Opacity",             ConfigValueType::Float,   "0.88",  "Overlay background opacity",                             0.15f, 1.0f },
@@ -125,7 +124,6 @@ namespace RuptureTimer
 		s.showNetworkStatus = readBool("Display", "ShowNetworkStatus", true);
 		s.showTimeSinceWave = readBool("Display", "ShowTimeSinceWave", false);
 		s.compactMode       = readBool("Display", "CompactMode", false);
-		s.lockWindow        = readBool("Display", "LockWindow", false);
 		s.accentByWaveType  = readBool("Display", "AccentByWaveType", true);
 		s.scale             = readFloat("Display", "Scale", 1.0f, 0.6f, 2.0f);
 		s.opacity           = readFloat("Display", "Opacity", 0.88f, 0.15f, 1.0f);

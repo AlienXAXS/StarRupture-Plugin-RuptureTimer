@@ -30,7 +30,6 @@ namespace RuptureTimer
 		WidgetHandle       g_widget           = nullptr;
 		PluginWindowHints  g_hints            = {};
 		bool               g_visible          = true;
-		int                g_appliedFlags     = -1;
 		void*              g_passthroughToken = nullptr;
 
 		// Base layout, in points at scale 1.0. Heights are derived from these
@@ -75,24 +74,17 @@ namespace RuptureTimer
 			WaveStage::Growback, WaveStage::None
 		};
 
-		int WindowFlagsFor(const Settings& cfg)
-		{
-			// NoBackground matters: the card below is drawn by hand, so ImGui's own
-			// window frame would sit around it as a second, larger box.
-			// No NoSavedSettings: without an ini entry ImGui re-centres the card on
-			// every launch, so the player's placement has to survive in the ini.
-			int flags = PluginWindowFlags_NoTitleBar
-			          | PluginWindowFlags_NoResize
-			          | PluginWindowFlags_NoScrollbar
-			          | PluginWindowFlags_NoBackground;
-
-			// Unlocked leaves ImGui's move handling on, so the card can be dragged
-			// by its body whenever a cursor is up (i.e. the ModLoader window is open).
-			if (cfg.lockWindow)
-				flags |= PluginWindowFlags_NoMove | PluginWindowFlags_NoMouseInputs;
-
-			return flags;
-		}
+		// NoBackground matters: the card below is drawn by hand, so ImGui's own
+		// window frame would sit around it as a second, larger box.
+		// No NoSavedSettings: without an ini entry ImGui re-centres the card on
+		// every launch, so the player's placement has to survive in the ini.
+		// No NoMove either -- ImGui's move handling stays on, so the card can be
+		// dragged by its body whenever a cursor is up (i.e. the ModLoader window
+		// is open).
+		constexpr int kWindowFlags = PluginWindowFlags_NoTitleBar
+		                           | PluginWindowFlags_NoResize
+		                           | PluginWindowFlags_NoScrollbar
+		                           | PluginWindowFlags_NoBackground;
 
 		void UpdateHints(const Settings& cfg)
 		{
@@ -105,18 +97,18 @@ namespace RuptureTimer
 			g_hints.pivot_y    = 0.0f;
 			g_hints.size_cond  = 0;       // Always, so a scale change lands immediately
 			g_hints.pos_cond   = 1;       // FirstUseEver
-			g_hints.extra_window_flags = WindowFlagsFor(cfg);
+			g_hints.extra_window_flags = kWindowFlags;
 		}
 
-		// While the overlay is unlocked the player is meant to drag it, which needs
-		// a cursor. Cooperative passthrough gives ImGui the mouse only when it is
-		// actually over the window, so camera look still works.
+		// The player is meant to be able to drag the overlay, which needs a cursor.
+		// Cooperative passthrough gives ImGui the mouse only when it is actually
+		// over the window, so camera look still works.
 		void UpdatePassthrough(const Settings& cfg)
 		{
 			auto* hooks = GetHooks();
 			if (!hooks || !hooks->UI) return;
 
-			const bool want = g_visible && cfg.showOverlay && cfg.enabled && !cfg.lockWindow;
+			const bool want = g_visible && cfg.showOverlay && cfg.enabled;
 			if (want && !g_passthroughToken)
 				g_passthroughToken = hooks->UI->AcquireInputPassthrough();
 			else if (!want && g_passthroughToken)
@@ -400,7 +392,6 @@ namespace RuptureTimer
 
 		const Settings& cfg = Config::Get();
 		UpdateHints(cfg);
-		g_appliedFlags = g_hints.extra_window_flags;
 
 		static PluginWidgetDesc desc = { "RuptureTimer_Overlay", &Render, &g_hints };
 		g_widget = hooks->UI->RegisterWidget(&desc);
@@ -430,7 +421,6 @@ namespace RuptureTimer
 			hooks->UI->UnregisterWidget(g_widget);
 			g_widget = nullptr;
 		}
-		g_appliedFlags = -1;
 	}
 
 	void Overlay::ApplySettings()
@@ -447,15 +437,6 @@ namespace RuptureTimer
 		}
 
 		UpdateHints(cfg);
-
-		// Window flags are baked in when the widget is created, so a lock/unlock
-		// needs the widget rebuilt. Size and colour changes land on their own.
-		if (g_widget && g_hints.extra_window_flags != g_appliedFlags)
-		{
-			Unregister();
-			Register();
-			return;
-		}
 
 		if (!g_widget)
 		{

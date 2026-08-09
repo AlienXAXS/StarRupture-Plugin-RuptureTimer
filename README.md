@@ -96,7 +96,6 @@ restart needed. Ranged values render as sliders.
 | Display | `ShowNetworkStatus` | `true` | Role badge and freshness dot |
 | Display | `ShowTimeSinceWave` | `false` | How long the current wave has run |
 | Display | `CompactMode` | `false` | Countdown only |
-| Display | `LockWindow` | `false` | Pin the overlay so it cannot be dragged |
 | Display | `AccentByWaveType` | `true` | Ember for Heat, ice for Cold |
 | Display | `Scale` | `1.0` | Size multiplier (0.6 – 2.0) |
 | Display | `Opacity` | `0.88` | Background opacity (0.15 – 1.0) |
@@ -110,9 +109,9 @@ restart needed. Ranged values render as sliders.
 Turning `CountdownInterpolation` off is the strictest mode: the countdown then only ever shows what
 the server actually sent, so it visibly steps once per broadcast interval.
 
-The overlay is draggable by default. A mouse cursor only exists while the ModLoader window is open,
-so open it (`F2`), drag the overlay where you want it, then close it again. Set `LockWindow=true`
-once you are happy with the position and the overlay will ignore the mouse entirely.
+The overlay is draggable. A mouse cursor only exists while the ModLoader window is open, so open it
+(`F2`), drag the overlay where you want it, then close it again. The position is remembered between
+sessions.
 
 ## Diagnostics window
 

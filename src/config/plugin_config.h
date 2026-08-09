@@ -23,7 +23,6 @@ namespace RuptureTimer
 		bool  showNetworkStatus  = true;
 		bool  showTimeSinceWave  = false;
 		bool  compactMode        = false;
-		bool  lockWindow         = false;
 		bool  accentByWaveType   = true;
 		float scale              = 1.0f;
 		float opacity            = 0.88f;
