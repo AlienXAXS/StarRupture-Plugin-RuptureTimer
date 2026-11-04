@@ -59,4 +59,19 @@
     </ClCompile>
   </ItemDefinitionGroup>
 
+  <!-- PLUGIN_GAME_BUILT_CL: the game build this plugin's own candidate rows are for.
+       CI or tools\sr-update.ps1 can pass /p:PluginGameBuiltCL=<CL> instead. See
+       PluginGameBuild.props in the Plugin SDK. -->
+  <PropertyGroup>
+    <PluginGameBuiltCL Condition="'$(PluginGameBuiltCL)' == ''">127004</PluginGameBuiltCL>
+  </PropertyGroup>
+  <Import Project="$(PluginSDKInclude)\..\PluginGameBuild.props"
+          Condition="Exists('$(PluginSDKInclude)\..\PluginGameBuild.props')" />
+
+  <!-- Rule 3: a plugin never reads a game-class member directly (Plugin SDK tools\Rule3Check.targets).
+       Reports until the plugin sets PLUGIN_MAP_MIGRATED, then fails the build. -->
+  <PropertyGroup>
+    <Rule3Plugin>RuptureTimer</Rule3Plugin>
+  </PropertyGroup>
+  <Import Project="$(PluginSDKInclude)\..\tools\Rule3Check.targets" Condition="Exists('$(PluginSDKInclude)\..\tools\Rule3Check.targets')" />
 </Project>

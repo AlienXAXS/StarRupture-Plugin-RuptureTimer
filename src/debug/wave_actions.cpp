@@ -26,7 +26,7 @@ namespace RuptureTimer
 
 		SDK::ACrPlayerControllerBase* LocalController()
 		{
-			SDK::UWorld* world = SDK::UWorld::GetWorld();
+			SDK::UWorld* world = PluginSdkRuntime::GetWorld();
 			if (!world) return nullptr;
 
 			SDK::APlayerController* pc = SDK::UGameplayStatics::GetPlayerController(world, 0);

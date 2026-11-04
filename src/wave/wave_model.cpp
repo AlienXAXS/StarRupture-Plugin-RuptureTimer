@@ -1,4 +1,5 @@
 #include "wave/wave_model.h"
+#include "wave/wave_fields.h"
 
 #include "Chimera_structs.hpp"
 
@@ -8,6 +9,11 @@ namespace RuptureTimer
 {
 	namespace
 	{
+		float Seconds(const PluginField<float>& field, const SDK::FCrEnviroWaveSettings& s)
+		{
+			return Fields::ValueOr<float>(field, &s);
+		}
+
 		constexpr float kMaxSaneSeconds = 86400.0f;
 
 		// Substage durations in running order, for the three stages that have them.
@@ -19,18 +25,18 @@ namespace RuptureTimer
 			{
 			case WaveStage::PreWave:
 				// PreWaveDuration is the whole stage; the explosion is the tail of it.
-				out[0] = s.PreWaveDuration - s.WavePreWaveExplosionDuration;
-				out[1] = s.WavePreWaveExplosionDuration;
+				out[0] = Seconds(Fields::PreWaveDuration, s) - Seconds(Fields::PreWaveExplosionDuration, s);
+				out[1] = Seconds(Fields::PreWaveExplosionDuration, s);
 				return 2;
 			case WaveStage::Fadeout:
-				out[0] = s.WaveFadeoutFireWaveDuration;
-				out[1] = s.WaveFadeoutBurningDuration;
-				out[2] = s.WaveFadeoutFadingDuration;
+				out[0] = Seconds(Fields::FadeoutFireWaveDuration, s);
+				out[1] = Seconds(Fields::FadeoutBurningDuration, s);
+				out[2] = Seconds(Fields::FadeoutFadingDuration, s);
 				return 3;
 			case WaveStage::Growback:
-				out[0] = s.WaveGrowbackMoonPhaseDuration;
-				out[1] = s.WaveGrowbackRegrowthStartDuration;
-				out[2] = s.WaveGrowbackRegrowthDuration;
+				out[0] = Seconds(Fields::GrowbackMoonPhaseDuration, s);
+				out[1] = Seconds(Fields::GrowbackRegrowthStartDuration, s);
+				out[2] = Seconds(Fields::GrowbackRegrowthDuration, s);
 				return 3;
 			default:
 				return 0;
@@ -62,18 +68,21 @@ namespace RuptureTimer
 		switch (stage)
 		{
 		case WaveStage::PreWave:
-			d = s.PreWaveDuration;
+			d = Seconds(Fields::PreWaveDuration, s);
 			break;
 		case WaveStage::Moving:
 			// The moving stage lasts however long the wave takes to cross the map.
-			if (std::isfinite(s.WaveSpeed) && std::fabs(s.WaveSpeed) > 1e-6f)
-				d = std::fabs(s.WaveEndPosition - s.WaveStartPosition) / std::fabs(s.WaveSpeed);
+			{
+				const float speed = Seconds(Fields::WaveSpeed, s);
+				if (std::isfinite(speed) && std::fabs(speed) > 1e-6f)
+					d = std::fabs(Seconds(Fields::WaveEndPosition, s) - Seconds(Fields::WaveStartPosition, s)) / std::fabs(speed);
+			}
 			break;
 		case WaveStage::Fadeout:
-			d = s.WaveFadeoutFireWaveDuration + s.WaveFadeoutBurningDuration + s.WaveFadeoutFadingDuration;
+			d = Seconds(Fields::FadeoutFireWaveDuration, s) + Seconds(Fields::FadeoutBurningDuration, s) + Seconds(Fields::FadeoutFadingDuration, s);
 			break;
 		case WaveStage::Growback:
-			d = s.WaveGrowbackMoonPhaseDuration + s.WaveGrowbackRegrowthStartDuration + s.WaveGrowbackRegrowthDuration;
+			d = Seconds(Fields::GrowbackMoonPhaseDuration, s) + Seconds(Fields::GrowbackRegrowthStartDuration, s) + Seconds(Fields::GrowbackRegrowthDuration, s);
 			break;
 		case WaveStage::None:
 			break;

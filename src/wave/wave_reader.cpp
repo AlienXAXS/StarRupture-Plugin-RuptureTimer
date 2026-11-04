@@ -1,6 +1,7 @@
 #include "wave/wave_reader.h"
 #include "wave/wave_model.h"
 #include "plugin_helpers.h"
+#include "wave/wave_fields.h"
 
 #include "Engine_classes.hpp"
 #include "Chimera_classes.hpp"
@@ -22,8 +23,9 @@ namespace RuptureTimer
 
 		// ---------------------------------------------------------------------
 		// UCrEnviroWaveTimerSubsystem: the fields below live inside the SDK's
-		// Pad_30[0x60], so there are no names to use and these are raw offsets
-		// taken from the IDA dump (UCrEnviroWaveTimerSubsystem/types.h).
+		// Pad_30[0x60], so there are no names to use. Their offsets come from the
+		// loader's map for the running build (wave_fields.h), taken from the IDA
+		// dump (UCrEnviroWaveTimerSubsystem/types.h) on CL-127004.
 		//
 		// NOTE on NextWaveTimer: despite the name it is NOT a running countdown.
 		// Nothing in the binary ever decrements it -- it is only assigned in
@@ -32,17 +34,9 @@ namespace RuptureTimer
 		// as the total for a progress ring, and useless as "time remaining".
 		// The live countdown is ACrWaveTimerActor::NextTime.
 		// ---------------------------------------------------------------------
-		constexpr int kOff_WaitingDuration     = 0x78;   // float, configured calm length
-		constexpr int kOff_NextWaveTimer       = 0x7C;   // float, == WaitingDuration (see above)
-		constexpr int kOff_bWaitingForNextWave = 0x80;   // bool, 1 between waves, 0 during one
-		constexpr int kOff_bStopWaves          = 0x83;   // bool, waves disabled entirely
-		constexpr int kOff_TimerActor          = 0x90;   // ACrWaveTimerActor*
-
-		template <typename T>
-		const T& AtOffset(const void* base, int offset)
-		{
-			return *reinterpret_cast<const T*>(static_cast<const uint8_t*>(base) + offset);
-		}
+		//   NextWaveTimer   float, the configured calm length
+		//   bStopWaves      bool, waves disabled entirely
+		//   TimerActor      ACrWaveTimerActor*
 
 		// The calm path runs several times a second, so this must not log per
 		// poll. Dedupe on a STABLE key describing the condition -- never on the
@@ -73,7 +67,7 @@ namespace RuptureTimer
 		                                 const SDK::ACrWaveTimerActor* expectedActor)
 		{
 			if (!ts || !expectedActor) return false;
-			return AtOffset<const SDK::ACrWaveTimerActor*>(ts, kOff_TimerActor) == expectedActor;
+			return Fields::ValueOr<SDK::ACrWaveTimerActor*>(Fields::TimerActor, ts, nullptr) == expectedActor;
 		}
 
 		// Beyond this the two independent countdowns are treated as contradicting
@@ -156,9 +150,9 @@ namespace RuptureTimer
 		{
 			switch (stage)
 			{
-			case WaveStage::PreWave:  return static_cast<uint8_t>(ss->CurrentPreWaveSubstage);
-			case WaveStage::Fadeout:  return static_cast<uint8_t>(ss->CurrentFadeoutSubstage);
-			case WaveStage::Growback: return static_cast<uint8_t>(ss->CurrentGrowbackSubstage);
+			case WaveStage::PreWave:  return static_cast<uint8_t>(Fields::ValueOr<SDK::EEnviroWavePreWaveSubstage>(Fields::PreWaveSubstage, ss));
+			case WaveStage::Fadeout:  return static_cast<uint8_t>(Fields::ValueOr<SDK::EEnviroWaveFadeoutSubstage>(Fields::FadeoutSubstage, ss));
+			case WaveStage::Growback: return static_cast<uint8_t>(Fields::ValueOr<SDK::EEnviroWaveGrowbackSubstage>(Fields::GrowbackSubstage, ss));
 			default: return 0;
 			}
 		}
@@ -178,7 +172,7 @@ namespace RuptureTimer
 		out       = WaveSnapshot{};
 		outReason = WaitReason::None;
 
-		SDK::UWorld* world = SDK::UWorld::GetWorld();
+		SDK::UWorld* world = PluginSdkRuntime::GetWorld();
 		if (!world)
 		{
 			outReason = WaitReason::NoWorld;
@@ -201,7 +195,10 @@ namespace RuptureTimer
 		// time that phase ends, not a countdown.
 		float timerRemaining = 0.0f;
 		bool  timerValid     = false;
-		if (SDK::ACrWaveTimerActor* timer = gameState->WaveTimerActor)
+		SDK::ACrWaveTimerActor* timer = Fields::ValueOr<SDK::ACrWaveTimerActor*>(Fields::WaveTimerActor, gameState, nullptr);
+		const float*   timerNextTime  = Fields::NextTime.In(timer);
+		const int32_t* timerNextPhase = Fields::NextPhase.In(timer);
+		if (timer && timerNextTime && timerNextPhase)
 		{
 			out.timerActorResolved = true;
 
@@ -218,24 +215,26 @@ namespace RuptureTimer
 			// Logged only on change, so it is a handful of lines per wave cycle.
 			static float s_lastNextTime  = 0.0f;
 			static int32_t s_lastPhase   = -999;
-			if (timer->NextTime != s_lastNextTime || timer->NextPhase != s_lastPhase)
+			const float   nextTime  = *timerNextTime;
+			const int32_t nextPhase = *timerNextPhase;
+			if (nextTime != s_lastNextTime || nextPhase != s_lastPhase)
 			{
 				const double serverTime = gameState->GetServerWorldTimeSeconds();
 				LOG_INFO("WaveTimer changed: NextTime %.2f -> %.2f | NextPhase %d -> %d | "
 				         "TimeSeconds=%.2f ServerWorldTime=%.2f (delta=%.2f)",
-				         s_lastNextTime, timer->NextTime, s_lastPhase, timer->NextPhase,
+				         s_lastNextTime, nextTime, s_lastPhase, nextPhase,
 				         (float)now, (float)serverTime, (float)(now - serverTime));
-				s_lastNextTime = timer->NextTime;
-				s_lastPhase    = timer->NextPhase;
+				s_lastNextTime = nextTime;
+				s_lastPhase    = nextPhase;
 			}
-			out.rawNextTime        = timer->NextTime;
-			out.rawNextPhase       = timer->NextPhase;
-			out.paused             = timer->bPause;
+			out.rawNextTime        = nextTime;
+			out.rawNextPhase       = nextPhase;
+			out.paused             = Fields::ValueOr<bool>(Fields::Pause, timer);
 
 			// Recorded whatever it works out to -- a negative value is exactly
 			// what the diagnostics need to see, and is how the stale-save case
 			// is identified below.
-			const float remaining = timer->NextTime - static_cast<float>(now);
+			const float remaining = nextTime - static_cast<float>(now);
 			out.rawTimerRemaining = remaining;
 
 			if (IsSaneSeconds(remaining))
@@ -244,8 +243,8 @@ namespace RuptureTimer
 				timerValid     = true;
 			}
 
-			if (timer->NextPhase != 0)
-				out.waveType = timer->NextPhase < 0 ? WaveType::Cold : WaveType::Heat;
+			if (nextPhase != 0)
+				out.waveType = nextPhase < 0 ? WaveType::Cold : WaveType::Heat;
 		}
 
 		// ---- Wave subsystem ----------------------------------------------------
@@ -317,23 +316,24 @@ namespace RuptureTimer
 			SDK::UCrEnviroWaveTimerSubsystem* ts = ResolveTimerSubsystem();
 			if (ts)
 			{
-				if (TimerSubsystemLayoutMatches(ts, gameState->WaveTimerActor))
+				if (TimerSubsystemLayoutMatches(ts, timer))
 				{
 					out.timerSubsysResolved = true;
-					out.wavesStopped        = AtOffset<bool>(ts, kOff_bStopWaves);
-					out.rawCalmTimer        = AtOffset<float>(ts, kOff_NextWaveTimer);
+					out.wavesStopped        = Fields::ValueOr<bool>(Fields::TimerStopWaves, ts);
+					out.rawCalmTimer        = Fields::ValueOr<float>(Fields::TimerNextWaveTimer, ts);
 
-					const float configured = AtOffset<float>(ts, kOff_WaitingDuration);
+					// NextWaveTimer is the configured calm length (see above).
+					const float configured = out.rawCalmTimer;
 					if (IsSaneSeconds(configured) && configured > 0.0f)
 						calmTotal = configured;
 				}
 				else
 				{
 					LogCalmOnce("layout",
-					            "UCrEnviroWaveTimerSubsystem layout mismatch: ts=%p +0x90=%p "
+					            "UCrEnviroWaveTimerSubsystem layout mismatch: ts=%p TimerActor=%p "
 					            "GameState->WaveTimerActor=%p", ts,
-					            AtOffset<const void*>(ts, kOff_TimerActor),
-					            (const void*)gameState->WaveTimerActor);
+					            (const void*)Fields::ValueOr<SDK::ACrWaveTimerActor*>(Fields::TimerActor, ts, nullptr),
+					            (const void*)timer);
 				}
 			}
 
@@ -388,7 +388,7 @@ namespace RuptureTimer
 				            "remaining=%.2f calmTotal=%.2f stale=%d (actor=%p)",
 				            out.rawNextPhase, out.rawNextTime, (float)now,
 				            out.rawTimerRemaining, calmTotal, (int)out.nextWaveOverdue,
-				            (const void*)gameState->WaveTimerActor);
+				            (const void*)timer);
 			}
 		}
 		else if (out.stageTimeValid && timerValid && out.rawNextPhase != 0 &&
