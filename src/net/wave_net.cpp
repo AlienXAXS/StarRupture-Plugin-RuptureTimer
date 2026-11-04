@@ -104,7 +104,6 @@ namespace RuptureTimer
 			if (s.wavesStopped)        f |= PF_WavesStopped;
 			if (s.timerSubsysResolved) f |= PF_TimerSubsysResolved;
 			if (s.nextWaveOverdue)   f |= PF_NextWaveOverdue;
-			if (s.nextWaveTimeStale) f |= PF_NextWaveStale;
 			p.flags = f;
 
 			return p;
@@ -142,7 +141,6 @@ namespace RuptureTimer
 			s.wavesStopped        = (p.flags & PF_WavesStopped)        != 0;
 			s.timerSubsysResolved = (p.flags & PF_TimerSubsysResolved) != 0;
 			s.nextWaveOverdue   = (p.flags & PF_NextWaveOverdue)   != 0;
-			s.nextWaveTimeStale = (p.flags & PF_NextWaveStale)     != 0;
 			return s;
 		}
 

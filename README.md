@@ -42,24 +42,24 @@ That is deliberate — see above.
 
 Worth knowing, because two of its quirks look like plugin bugs and are not.
 
-`ACrWaveTimerActor::NextTime` is an **absolute world time**, armed as `WaitingDuration + TimeSeconds`.
-At world start that makes it `WaitingDuration` exactly — 40 minutes on the stock config — so the
-countdown to the session's first wave is genuine, and it is the same value the vanilla
-`WaveTimeCounter` HUD element reads.
+On the host (single player, or the server) the countdown is
+`UCrEnviroWaveTimerSubsystem::NextWaveTimer`: the game sets it to `WaitingDuration` (40 minutes on the
+stock config) when a calm window starts, its `Tick` counts it down while `bWaitingForNextWave` is set
+and waves are not paused, and the wave starts when it reaches zero. It is saved with the world, so the
+countdown carries over a save/load, and it stands still while waves are paused. It is the same value
+the wave timer in BetterCheats shows.
 
-**World time is persisted with the save**, not reset per session — a long-running world reports
-`TimeSeconds` in the hundreds of hours. `NextTime` is absolute on that same persisted timeline, so
-the countdown survives a save/load intact rather than restarting.
+`ACrWaveTimerActor::NextTime`, the replicated value the vanilla `WaveTimeCounter` HUD element reads, is
+an **absolute world time**, armed as `WaitingDuration + TimeSeconds`. **World time is persisted with
+the save** — a long-running world reports `TimeSeconds` in the hundreds of hours — but the calm
+deadline is armed at world start, before that time is restored. On a loaded save `NextTime` therefore
+sits hours in the past until the first wave event of the session rearms it. The host does not use it
+for the calm countdown; a client whose server has no RuptureTimer has nothing else to read and falls
+back to it.
 
-**If the scheduled moment passes without a wave starting**, nothing rearms `NextTime`; it slides
-into the past and stays there, and the overlay shows **"Overdue · no wave started yet"** rather than
-a negative or invented number. The vanilla HUD is equally blank in that state — it reads the same
-field.
-
-In practice this only shows up on a world where the **first wave has never fired** — the schedule is
-still sitting on its initial arming while world time has moved past it. It corrects itself the moment
-any wave event occurs: starting, finishing or cancelling a wave all rearm `NextTime`, and the
-countdown is accurate from then on. A world with normal wave activity does not enter this state.
+**If no wave is running and no countdown is running** (the host is not waiting for a next wave, or on
+such a client `NextTime` has passed), the overlay shows **"Overdue · no wave started yet"** rather than
+a negative or invented number.
 
 > `NextPhase` has no value for Pre-Wave — `OnWaveStarted` only rearms for Moving, Fadeout and
 > Growback. A wave entering Pre-Wave therefore leaves the replicated timer untouched, which is why

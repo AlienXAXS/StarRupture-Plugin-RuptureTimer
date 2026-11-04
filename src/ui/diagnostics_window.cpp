@@ -121,8 +121,7 @@ namespace RuptureTimer
 				Row(ui, "Timer subsystem", s.timerSubsysResolved ? "resolved (offsets verified)" : "not resolved");
 				Row(ui, "Timer actor", s.timerActorResolved ? "resolved" : "NOT RESOLVED");
 				Row(ui, "Waves stopped", YesNo(s.wavesStopped));
-				Row(ui, "NextTime overdue", s.nextWaveOverdue ? "YES - passed with no wave started" : "no");
-				Row(ui, "NextTime stale", s.nextWaveTimeStale ? "YES - restored from an earlier session" : "no");
+				Row(ui, "Overdue", s.nextWaveOverdue ? "YES - no wave and no countdown running" : "no");
 				RowF(ui, "Raw NextTime", "%.2f", s.rawNextTime);
 				RowF(ui, "Raw NextPhase", "%d (%s)", s.rawNextPhase,
 					s.rawNextPhase == 0 ? "calm/prewave" : (s.rawNextPhase < 0 ? "Cold" : "Heat"));

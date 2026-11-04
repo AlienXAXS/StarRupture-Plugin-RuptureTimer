@@ -47,12 +47,14 @@ namespace RuptureTimer::Fields
 	// UCrEnviroWaveTimerSubsystem's members sit inside the SDK's Pad_30[0x60], so
 	// they have no names there: native rows. The rows below are CL-127004's, the
 	// build this plugin was compiled against; every other build comes from the
-	// loader's map. WaitingDuration (0x78) is
-	// not a member any more on CL-128786, so it is not requested: the configured
-	// calm length is read from NextWaveTimer, which the game assigns from it and
-	// nothing else changes.
+	// loader's map. WaitingDuration (0x78) is not a member any more on
+	// CL-128786, so it is not requested. NextWaveTimer is the live countdown:
+	// the subsystem's Tick decrements it while bWaitingForNextWave is set and
+	// waves are not paused.
 	inline auto TimerNextWaveTimer = PluginField<float>{ { "UCrEnviroWaveTimerSubsystem::NextWaveTimer",
 		"UCrEnviroWaveTimerSubsystem", "NextWaveTimer", PLUGIN_FIELD_NATIVE, sizeof(float), 0x7C } };
+	inline auto TimerWaitingForNextWave = PluginField<bool>{ { "UCrEnviroWaveTimerSubsystem::bWaitingForNextWave",
+		"UCrEnviroWaveTimerSubsystem", "bWaitingForNextWave", PLUGIN_FIELD_NATIVE, sizeof(bool), 0x80 } };
 	inline auto TimerStopWaves = PluginField<bool>{ { "UCrEnviroWaveTimerSubsystem::bStopWaves",
 		"UCrEnviroWaveTimerSubsystem", "bStopWaves", PLUGIN_FIELD_NATIVE, sizeof(bool), 0x83 } };
 	inline auto TimerActor = PluginField<SDK::ACrWaveTimerActor*>{ { "UCrEnviroWaveTimerSubsystem::TimerActor",
@@ -60,6 +62,9 @@ namespace RuptureTimer::Fields
 
 	inline const PluginFieldCandidate kNextWaveTimerRows[] = {
 		{ 127004, 0x7C, sizeof(float), 0, nullptr },
+	};
+	inline const PluginFieldCandidate kWaitingForNextWaveRows[] = {
+		{ 127004, 0x80, sizeof(bool), 0, nullptr },
 	};
 	inline const PluginFieldCandidate kStopWavesRows[] = {
 		{ 127004, 0x83, sizeof(bool), 0, nullptr },
@@ -81,7 +86,7 @@ namespace RuptureTimer::Fields
 		       WaveSettingsSize, WaveSpeed, WaveStartPosition, WaveEndPosition, PreWaveDuration,
 		       PreWaveExplosionDuration, FadeoutFireWaveDuration, FadeoutBurningDuration,
 		       FadeoutFadingDuration, GrowbackMoonPhaseDuration, GrowbackRegrowthStartDuration,
-		       GrowbackRegrowthDuration, TimerNextWaveTimer, TimerStopWaves, TimerActor),
+		       GrowbackRegrowthDuration, TimerNextWaveTimer, TimerWaitingForNextWave, TimerStopWaves, TimerActor),
 		{ "General.ShowOverlay", "General.ToggleKey", "Display.*", "Network.*" } };
 
 	// Call before Resolve, so a miss lands on the feature and not on the plugin.
@@ -101,6 +106,7 @@ namespace RuptureTimer::Fields
 			FadeoutFireWaveDuration, FadeoutBurningDuration, FadeoutFadingDuration, GrowbackMoonPhaseDuration,
 			GrowbackRegrowthStartDuration, GrowbackRegrowthDuration);
 		all = PluginMap::ResolveField(scanner, self, TimerNextWaveTimer, kNextWaveTimerRows, static_cast<uint32_t>(std::size(kNextWaveTimerRows))) && all;
+		all = PluginMap::ResolveField(scanner, self, TimerWaitingForNextWave, kWaitingForNextWaveRows, static_cast<uint32_t>(std::size(kWaitingForNextWaveRows))) && all;
 		all = PluginMap::ResolveField(scanner, self, TimerStopWaves, kStopWavesRows, static_cast<uint32_t>(std::size(kStopWavesRows))) && all;
 		all = PluginMap::ResolveField(scanner, self, TimerActor, kTimerActorRows, static_cast<uint32_t>(std::size(kTimerActorRows))) && all;
 		return all;

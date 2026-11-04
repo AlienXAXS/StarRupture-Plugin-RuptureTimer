@@ -263,8 +263,6 @@ namespace RuptureTimer
 			const char* sub = SubstageName(snap.stage, snap.substage);
 			if (snap.wavesStopped)
 				snprintf(detail, sizeof(detail), "Waves stopped");
-			else if (snap.nextWaveTimeStale)
-				snprintf(detail, sizeof(detail), "Timer from an earlier session");
 			else if (snap.nextWaveOverdue)
 				snprintf(detail, sizeof(detail), "Overdue \xC2\xB7 no wave started yet");
 			else if (cfg.showSubstage && sub && sub[0])

@@ -27,7 +27,6 @@ namespace RuptureTimer
 		PF_WavesStopped       = 1 << 9,
 		PF_TimerSubsysResolved = 1 << 10,
 		PF_NextWaveOverdue   = 1 << 11,
-		PF_NextWaveStale     = 1 << 12,
 	};
 
 #pragma pack(push, 1)

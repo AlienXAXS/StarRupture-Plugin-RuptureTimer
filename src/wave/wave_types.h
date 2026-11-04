@@ -75,19 +75,11 @@ namespace RuptureTimer
 		bool paused         = false;
 		bool wavesStopped   = false;   // waves disabled outright — no next one coming
 
-		// NextTime is armed once at world start as WaitingDuration + ~0, so it is
-		// a genuine countdown to the session's first wave. If that moment passes
-		// without a wave starting, nothing rearms it and it just slides further
-		// into the past -- the schedule has stalled, and there is no next-wave
-		// time to show until a wave event fires.
+		// No wave is running and no countdown is running: on the authority the
+		// timer subsystem is not waiting for a next wave; on a client the actor's
+		// calm deadline has passed with nothing having fired. The schedule has
+		// stalled, and there is no next-wave time to show until a wave fires.
 		bool nextWaveOverdue = false;
-
-		// The opposite failure: NextTime is further away than a calm window can
-		// possibly be, which means it is an absolute timestamp restored from the
-		// session that wrote the save, measured against a clock that no longer
-		// exists. Distinct from overdue, and worth saying so -- the causes and
-		// the fixes are different.
-		bool nextWaveTimeStale = false;
 
 		float stageProgress     = 0.0f;   // 0..1 within the current stage
 		float stageDuration     = 0.0f;   // seconds

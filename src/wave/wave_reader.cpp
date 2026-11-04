@@ -21,22 +21,28 @@ namespace RuptureTimer
 		SDK::UCrEnviroWaveTimerSubsystem* g_cachedTimerSubsys = nullptr;
 		int                              g_walkFailures     = 0;
 
+		// The longest NextWaveTimer seen in this world, as the total for the
+		// progress ring. WaitingDuration itself is not read (see wave_fields.h).
+		float                            g_calmLength       = 0.0f;
+
 		// ---------------------------------------------------------------------
 		// UCrEnviroWaveTimerSubsystem: the fields below live inside the SDK's
 		// Pad_30[0x60], so there are no names to use. Their offsets come from the
 		// loader's map for the running build (wave_fields.h), taken from the IDA
 		// dump (UCrEnviroWaveTimerSubsystem/types.h) on CL-127004.
 		//
-		// NOTE on NextWaveTimer: despite the name it is NOT a running countdown.
-		// Nothing in the binary ever decrements it -- it is only assigned in
-		// Initialize and OnWaveFinished (both `= WaitingDuration`) and then
-		// persisted. So it is the configured length of the calm window, useful
-		// as the total for a progress ring, and useless as "time remaining".
-		// The live countdown is ACrWaveTimerActor::NextTime.
+		// NextWaveTimer is the authority's live countdown: Initialize and
+		// OnWaveFinished set it to WaitingDuration, Tick decrements it while
+		// bWaitingForNextWave is set and waves are not paused, and the wave
+		// starts when it runs out. It is persisted, so it is also right after a
+		// save is loaded. The actor's NextTime is not: it is an absolute world
+		// time armed at world start, and loading a save then restores the
+		// world's clock to the save's play time, leaving NextTime far behind it.
 		// ---------------------------------------------------------------------
-		//   NextWaveTimer   float, the configured calm length
-		//   bStopWaves      bool, waves disabled entirely
-		//   TimerActor      ACrWaveTimerActor*
+		//   NextWaveTimer        float, seconds to the next wave
+		//   bWaitingForNextWave  bool, the countdown is running
+		//   bStopWaves           bool, waves disabled entirely
+		//   TimerActor           ACrWaveTimerActor*
 
 		// The calm path runs several times a second, so this must not log per
 		// poll. Dedupe on a STABLE key describing the condition -- never on the
@@ -54,8 +60,8 @@ namespace RuptureTimer
 
 			char buf[256];
 			snprintf(buf, sizeof(buf), fmt, args...);
-			// Debug, not warn: a stale save timer is a known game-side limitation
-			// that the overlay already reports, not something gone wrong here.
+			// Debug, not warn: a stalled schedule is a game-side state that the
+			// overlay already reports, not something gone wrong here.
 			LOG_DEBUG("WaveReader (calm): %s", buf);
 		}
 
@@ -87,6 +93,7 @@ namespace RuptureTimer
 				g_cachedSubsystem   = nullptr;
 				g_cachedTimerSubsys = nullptr;
 				g_walkFailures      = 0;
+				g_calmLength        = 0.0f;
 			}
 
 			// The subsystem collection is not exposed by the SDK, so GObjects is
@@ -164,6 +171,7 @@ namespace RuptureTimer
 		g_cachedSubsystem   = nullptr;
 		g_cachedTimerSubsys = nullptr;
 		g_walkFailures      = 0;
+		g_calmLength        = 0.0f;
 		ClearCalmLogState();
 	}
 
@@ -232,8 +240,7 @@ namespace RuptureTimer
 			out.paused             = Fields::ValueOr<bool>(Fields::Pause, timer);
 
 			// Recorded whatever it works out to -- a negative value is exactly
-			// what the diagnostics need to see, and is how the stale-save case
-			// is identified below.
+			// what the diagnostics need to see.
 			const float remaining = nextTime - static_cast<float>(now);
 			out.rawTimerRemaining = remaining;
 
@@ -308,10 +315,11 @@ namespace RuptureTimer
 		// ---- Reconcile the sources --------------------------------------------
 		if (!out.waveInProgress)
 		{
-			// The timer subsystem supplies whether waves are running at all, and
-			// how long a calm window lasts -- but not how much of it is left.
-			// The only live countdown is the replicated actor's NextTime.
-			float calmTotal = 0.0f;
+			// On the authority the timer subsystem holds the live countdown, the
+			// one the game itself fires the wave from. A pure client has no such
+			// subsystem and falls back to the replicated actor's NextTime.
+			float calmTotal     = 0.0f;
+			bool  haveCountdown = false;
 
 			SDK::UCrEnviroWaveTimerSubsystem* ts = ResolveTimerSubsystem();
 			if (ts)
@@ -322,10 +330,15 @@ namespace RuptureTimer
 					out.wavesStopped        = Fields::ValueOr<bool>(Fields::TimerStopWaves, ts);
 					out.rawCalmTimer        = Fields::ValueOr<float>(Fields::TimerNextWaveTimer, ts);
 
-					// NextWaveTimer is the configured calm length (see above).
-					const float configured = out.rawCalmTimer;
-					if (IsSaneSeconds(configured) && configured > 0.0f)
-						calmTotal = configured;
+					const float countdown = out.rawCalmTimer;
+					if (Fields::ValueOr<bool>(Fields::TimerWaitingForNextWave, ts) && IsSaneSeconds(countdown))
+					{
+						haveCountdown = true;
+						if (countdown > g_calmLength)
+							g_calmLength = countdown;
+						timerRemaining = countdown;
+					}
+					calmTotal = g_calmLength;
 				}
 				else
 				{
@@ -337,22 +350,12 @@ namespace RuptureTimer
 				}
 			}
 
-			// Is NextTime something this session actually armed?
-			//
-			// SetPhaseTimer always writes `NextTime = WaitingDuration + TimeSeconds`
-			// for phase 0, so a legitimately armed calm timer can never be more
-			// than WaitingDuration away. At world start that makes NextTime equal
-			// WaitingDuration exactly, and the countdown to the session's first
-			// wave is real for that whole window.
-			//
-			// Past it, if no wave started, nothing rearms NextTime and it slides
-			// negative -- the schedule has stalled and there is nothing to show.
-			const float kArmedEpsilon = 1.0f;
-			bool plausible = timerValid;
-			if (plausible && calmTotal > 0.0f && timerRemaining > calmTotal + kArmedEpsilon)
-				plausible = false;
+			// Without the subsystem, the actor's calm deadline is all there is.
+			const bool usable = out.timerSubsysResolved
+			                  ? haveCountdown
+			                  : (timerValid && out.rawNextPhase == 0);
 
-			if (!out.wavesStopped && plausible && out.rawNextPhase == 0)
+			if (!out.wavesStopped && usable)
 			{
 				out.nextWaveIn        = timerRemaining;
 				out.nextWaveTimeValid = true;
@@ -363,7 +366,7 @@ namespace RuptureTimer
 				ClearCalmLogState();
 
 				// Gives the ring something to sweep through during the calm window.
-				if (calmTotal >= timerRemaining)
+				if (calmTotal >= timerRemaining && calmTotal > 0.0f)
 				{
 					out.stageDuration = calmTotal;
 					out.stageProgress = 1.0f - (timerRemaining / calmTotal);
@@ -371,22 +374,18 @@ namespace RuptureTimer
 			}
 			else if (!out.wavesStopped)
 			{
-				const bool haveActor = out.timerActorResolved && out.rawNextPhase == 0;
+				// No wave running and no countdown running: the schedule has
+				// stalled. On a client, the actor's deadline passed with nothing
+				// having fired.
+				out.nextWaveOverdue = out.timerSubsysResolved
+				                    ? true
+				                    : (out.timerActorResolved && out.rawNextPhase == 0
+				                       && out.rawTimerRemaining < 0.0f);
 
-				// Too far away to be this session's calm window -- a restored
-				// absolute timestamp.
-				out.nextWaveTimeStale = haveActor && calmTotal > 0.0f
-				                     && out.rawTimerRemaining > calmTotal + kArmedEpsilon;
-
-				// Already elapsed with nothing having fired.
-				out.nextWaveOverdue = haveActor && !out.nextWaveTimeStale
-				                   && out.rawTimerRemaining < 0.0f;
-
-				LogCalmOnce(out.nextWaveTimeStale ? "stalesave"
-				          : out.nextWaveOverdue   ? "overdue" : "nocountdown",
-				            "no usable countdown: NextPhase=%d NextTime=%.2f now=%.2f "
-				            "remaining=%.2f calmTotal=%.2f stale=%d (actor=%p)",
-				            out.rawNextPhase, out.rawNextTime, (float)now,
+				LogCalmOnce(out.nextWaveOverdue ? "overdue" : "nocountdown",
+				            "no usable countdown: NextWaveTimer=%.2f NextPhase=%d NextTime=%.2f "
+				            "now=%.2f remaining=%.2f calmTotal=%.2f overdue=%d (actor=%p)",
+				            out.rawCalmTimer, out.rawNextPhase, out.rawNextTime, (float)now,
 				            out.rawTimerRemaining, calmTotal, (int)out.nextWaveOverdue,
 				            (const void*)timer);
 			}
