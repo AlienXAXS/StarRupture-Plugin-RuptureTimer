@@ -68,6 +68,8 @@ a negative or invented number.
 
 ## Installation
 
+Requires [StarRupture-ModLoader](https://github.com/AlienXAXS/StarRupture-ModLoader) v1.23.0 or later.
+
 Copy the matching DLL into the game's `Plugins/` directory next to `dwmapi.dll`:
 
 - Players and listen-server hosts: `RuptureTimer-Client.dll` → rename to `RuptureTimer.dll`
