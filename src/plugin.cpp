@@ -150,6 +150,19 @@ static void OnWorldEndPlay(SDK::UWorld* world, const char* worldName)
 	Deactivate();
 }
 
+#if !defined(MODLOADER_SERVER_BUILD)
+// Hot-reload: the world began before we registered for it. The loader calls this
+// on the first tick after we register if ChimeraMain is already running.
+static void OnUIStateChanged(uint64_t /*oldState*/, uint64_t newState, void* /*userData*/)
+{
+	if ((newState & PLUGIN_UI_IN_GAMEPLAY) && !g_isActive)
+	{
+		LOG_INFO("ChimeraMain already running — activating now");
+		Activate();
+	}
+}
+#endif
+
 extern "C" {
 
 	__declspec(dllexport) PluginInfo* GetPluginInfo()
@@ -216,7 +229,10 @@ extern "C" {
 			DiagnosticsWindow::ApplySettings();
 			BindKeys();
 
-			// Hot-reload: the world may already be up.
+			// Hot-reload: the world may already be up. The UI state is a client
+			// interface (hooks->GameMenu is null on a server), so a dedicated
+			// server still asks the world for its name.
+#if defined(MODLOADER_SERVER_BUILD)
 			if (SDK::UWorld* currentWorld = PluginSdkRuntime::GetWorld())
 			{
 				const std::string worldName = currentWorld->GetName();
@@ -226,6 +242,10 @@ extern "C" {
 					Activate();
 				}
 			}
+#else
+			if (hooks->GameMenu)
+				hooks->GameMenu->RegisterOnUIStateChanged(PLUGIN_UI_IN_GAMEPLAY, &OnUIStateChanged, nullptr);
+#endif
 
 			LOG_INFO("RuptureTimer initialized");
 			return true;
@@ -264,6 +284,10 @@ extern "C" {
 			}
 			if (hooks->UI)
 				hooks->UI->UnregisterOnConfigChanged(g_self, &OnConfigChanged);
+#if !defined(MODLOADER_SERVER_BUILD)
+			if (hooks->GameMenu)
+				hooks->GameMenu->UnregisterOnUIStateChanged(&OnUIStateChanged, nullptr);
+#endif
 		}
 
 		UnbindKeys();
