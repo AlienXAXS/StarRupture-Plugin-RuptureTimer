@@ -196,6 +196,10 @@ The full plugin API — hooks, config system, pattern scanner, ImGui, networking
 [PluginDevelopment.md](https://github.com/AlienXAXS/StarRupture-Plugin-SDK/blob/main/PluginDevelopment.md)
 in the Plugin SDK repo, which is the source of truth for `plugin_interface.h`.
 
+## Reporting Bugs
+
+Found a bug? [Report it on GitHub](https://github.com/AlienXAXS/StarRupture-Plugin-RuptureTimer/issues) and attach your `ModLoader.log` (in `<game>\StarRupture\Binaries\Win64\ModLoader\Logs\`).
+
 ## Credits
 
 Original mod by [@AlienXAXS](https://github.com/AlienXAXS).
