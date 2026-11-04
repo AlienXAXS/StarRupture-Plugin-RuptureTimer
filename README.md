@@ -193,3 +193,9 @@ contains a strictly higher semver.
 The full plugin API — hooks, config system, pattern scanner, ImGui, networking — is documented in
 [PluginDevelopment.md](https://github.com/AlienXAXS/StarRupture-Plugin-SDK/blob/main/PluginDevelopment.md)
 in the Plugin SDK repo, which is the source of truth for `plugin_interface.h`.
+
+## Credits
+
+Original mod by [@AlienXAXS](https://github.com/AlienXAXS).
+
+Maintained by [@msantoro12](https://github.com/msantoro12).
