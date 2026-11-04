@@ -1,0 +1,164 @@
+[size=6][b]RuptureTimer — Rupture Wave Overlay for StarRupture[/b][/size]
+
+[b]Found a bug? Report it on GitHub: [url=https://github.com/AlienXAXS/StarRupture-Plugin-RuptureTimer/issues]https://github.com/AlienXAXS/StarRupture-Plugin-RuptureTimer/issues[/url][/b] and attach your [b]ModLoader.log[/b] (in [b]Binaries\Win64\ModLoader\Logs\[/b]).
+
+Adds a stylish, configurable in-game overlay that shows what the Rupture Wave is doing right now, how long until it changes, and what comes next.
+
+[b]Multiplayer-aware[/b] — the server reads the wave state and synchronises it to connected clients.
+
+[line]
+
+[size=5][b]What It Does[/b][/size]
+
+RuptureTimer provides an at-a-glance view of the current Rupture Wave state without having to rely solely on the vanilla HUD.
+
+The overlay shows:
+
+[list]
+[*][b]Current state[/b] — Pre-Wave, Moving, Fadeout, Growback or Calm[/*]
+[*][b]Active substage[/b] — Fire Wave, Burning, Regrowth and other substages[/*]
+[*][b]Time until the next state[/b] — countdown with a progress ring[/*]
+[*][b]Stage timeline[/b] — see where you currently are in the wave cycle[/*]
+[*][b]Next state[/b] — see what the wave will transition into[/*]
+[*][b]Multiplayer status[/b] — shows the current network role and data freshness
+[/*]
+[/list]
+When the plugin does not have the required data, it does not guess. Unknown countdowns are displayed as [i]--:--[/i] along with the reason.
+
+[line]
+
+[size=5][b]Multiplayer & Server Support[/b][/size]
+
+RuptureTimer uses the side of the game that has authority over the wave state and sends a compact snapshot to clients through the ModLoader plugin network channel.
+
+[list]
+[*][b]Solo / Offline[/b] — the client reads the wave locally and does not use networking[/*]
+[*][b]Listen Server / Host[/b] — the host reads the wave and broadcasts it to connected clients[/*]
+[*][b]Joined Server[/b] — the client displays the wave state received from the server[/*]
+[*][b]Dedicated Server[/b] — the server reads and broadcasts the wave state; no UI is displayed
+[/*]
+[/list]
+[b]Important:[/b] A client connected to a server without the server DLL installed will remain in its waiting state. This is intentional.
+
+[line]
+
+[size=5][b]Client & Server Installation[/b][/size]
+
+[list]
+[*]For players and listen-server hosts, install [b]RuptureTimer-Client[/b][/*]
+[*]For dedicated servers, install [b]RuptureTimer-Server[/b][/*]
+[*]Place the DLL in the game's [i]Plugins[/i] directory which is in the ModLoader directory next to [i]dwmapi.dll[/i].
+[/*]
+[/list]
+The release ZIPs already contain a correctly named [i]Plugins\RuptureTimer.dll[/i] together with the sidecar required for automatic updates, so installing from the release ZIP is recommended.
+
+On first launch, [i]AxRuptureTimer.ini[/i] will be generated in:
+
+[i]<game_dir>\StarRupture\Binaries\Win64\ModLoader\Plugins\config[/i]
+
+[b]Important:[/b] The client and server DLLs must be from the [b]same release[/b]. The network wire format is versioned, and mismatched versions will be rejected rather than decoded incorrectly.
+
+[line]
+
+[size=5][b]Configuration[/b][/size]
+
+Configuration can be edited through:
+
+[i]Plugins\config\AxRuptureTimer.ini[/i]
+
+Alternatively, use the ModLoader configuration tab. Changes are applied live and do not require a restart.
+
+[list]
+[*][b]Enabled[/b] — master enable/disable switch
+[/*]
+[*][b]ShowOverlay[/b] — show or hide the on-screen overlay
+[/*]
+[*][b]ToggleKey[/b] — key used to show/hide the overlay (default: F7)
+[/*]
+[*][b]ShowStageTimeline[/b] — show the Pre-Wave → Calm stage timeline
+[/*]
+[*][b]ShowProgressRing[/b] — show the countdown progress ring
+[/*]
+[*][b]ShowNextState[/b] — show the NEXT state line
+[/*]
+[*][b]ShowSubstage[/b] — show the active substage
+[/*]
+[*][b]ShowWavePosition[/b] — show the wave's map position while moving
+[/*]
+[*][b]ShowNetworkStatus[/b] — show the network role and data freshness
+[/*]
+[*][b]ShowTimeSinceWave[/b] — show how long the current wave has been running
+[/*]
+[*][b]CompactMode[/b] — display countdown only
+[/*]
+[*][b]LockWindow[/b] — prevent the overlay from being dragged
+[/*]
+[*][b]AccentByWaveType[/b] — change the accent based on Heat/Cold wave type
+[/*]
+[*][b]Scale[/b] — overlay size multiplier (default: 1.0, range: 0.6–2.0)
+[/*]
+[*][b]Opacity[/b] — overlay background opacity (default: 0.88, range: 0.15–1.0)
+[/*]
+[*][b]AccentPreset[/b] — 0 Signal, 1 Amber, 2 Violet, 3 Mono
+[/*]
+[*][b]BroadcastIntervalSeconds[/b] — server snapshot interval (default: 1.0)
+[/*]
+[*][b]StaleAfterSeconds[/b] — time before network data is marked stale (default: 5.0)
+[/*]
+[*][b]CountdownInterpolation[/b] — locally tick the countdown between server packets
+[/*]
+[*][b]VerboseLogging[/b] — log wave transitions and packet traffic
+[/*]
+[*][b]ShowDiagnosticsWindow[/b] — enable the diagnostics window
+[/*]
+[/list]
+[b]CountdownInterpolation[/b] can be disabled for strict server-authoritative behaviour. When disabled, the countdown only displays values actually received from the server and will visibly update at the broadcast interval.
+
+[line]
+
+[size=5][b]Moving & Locking the Overlay[/b][/size]
+
+The overlay is draggable by default.
+
+A mouse cursor is available while the ModLoader window is open. Press [b]F2[/b], drag the overlay to your preferred position, then close the ModLoader window again.
+
+Once the position is correct, set:
+
+[i]LockWindow=true[/i]
+
+This prevents the overlay from responding to mouse interaction.
+
+[line]
+
+[size=5][b]Requirements[/b][/size]
+
+[list]
+[*]StarRupture
+[/*]
+[*]StarRupture ModLoader
+[/*]
+[*]For multiplayer, the appropriate server-side plugin must be installed where required
+[/*]
+[/list]
+[b]Note:[/b] Client and server DLLs must be from the same release.
+
+[line]
+
+[size=5][b]Troubleshooting[/b][/size]
+
+[list]
+[*][b]Overlay is waiting for data[/b] — if you are connected to a server, make sure the server has the matching RuptureTimer server DLL installed.
+[/*]
+[*][b]Client and server do not communicate[/b] — make sure both DLLs are from the same release.
+[/*]
+[*][b]Countdown appears stale[/b] — check the network status indicator and the [i]StaleAfterSeconds[/i] configuration.
+[/*]
+[*][b]Overlay cannot be moved[/b] — open the ModLoader window with [b]F2[/b] and make sure [i]LockWindow[/i] is disabled.
+[/*]
+[*][b]Need more information[/b] — enable [i]ShowDiagnosticsWindow[/i] to inspect the raw wave and network data.[/*]
+[/list]
+[line]
+
+[size=5][b]Disclaimer[/b][/size]
+
+Use at your own risk. This mod is provided as-is. The authors are not responsible for any damage, data loss, crashes or other issues caused by using this software.
