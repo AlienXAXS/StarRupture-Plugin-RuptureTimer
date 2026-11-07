@@ -9,16 +9,16 @@ namespace RuptureTimer
 {
 	namespace
 	{
-		float Seconds(const PluginField<float>& field, const SDK::FCrEnviroWaveSettings& s)
+		float Seconds(const PluginField<float>& field, const void* s)
 		{
-			return Fields::ValueOr<float>(field, &s);
+			return Fields::ValueOr<float>(field, s);
 		}
 
 		constexpr float kMaxSaneSeconds = 86400.0f;
 
 		// Substage durations in running order, for the three stages that have them.
 		// Order matches the game: it advances through these as stage progress runs 0->1.
-		int CollectSubstageDurations(WaveStage stage, const SDK::FCrEnviroWaveSettings& s,
+		int CollectSubstageDurations(WaveStage stage, const void* s,
 		                             float out[3])
 		{
 			switch (stage)
@@ -62,7 +62,7 @@ namespace RuptureTimer
 		return WaveStage::None;
 	}
 
-	float StageDuration(WaveStage stage, const SDK::FCrEnviroWaveSettings& s)
+	float StageDuration(WaveStage stage, const void* s)
 	{
 		float d = 0.0f;
 		switch (stage)
@@ -104,7 +104,7 @@ namespace RuptureTimer
 	}
 
 	bool SubstageRemaining(WaveStage stage, uint8_t substage, float stageProgress,
-	                       const SDK::FCrEnviroWaveSettings& s, float* outRemaining)
+	                       const void* s, float* outRemaining)
 	{
 		if (!outRemaining || substage == 0) return false;
 

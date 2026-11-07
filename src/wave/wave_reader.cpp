@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <utility>
 
 namespace RuptureTimer
 {
@@ -24,6 +25,35 @@ namespace RuptureTimer
 		// The longest NextWaveTimer seen in this world, as the total for the
 		// progress ring. WaitingDuration itself is not read (see wave_fields.h).
 		float                            g_calmLength       = 0.0f;
+
+		// GetCurrentStageSettings returns FCrEnviroWaveSettings by value through
+		// ProcessEvent. The SDK's wrapper holds it as a compiled struct; this
+		// calls the function with a parameter block of the function's live size
+		// (PluginMap::ParamsBlock) and the struct the running build's size, so a
+		// build that resizes the struct does not turn the reader off. The struct
+		// is the function's only parameter, at offset 0 of the block, and the
+		// members are read in place from "ReturnValue". The block is empty when
+		// the function, the size or the call is not there.
+		PluginMap::ParamsBlock CurrentStageSettings(SDK::UCrEnviroWaveSubsystem* ss)
+		{
+			SDK::UFunction* function = ss && ss->Class
+				? ss->Class->GetFunction("CrEnviroWaveSubsystem", "GetCurrentStageSettings") : nullptr;
+			if (!function)
+				return PluginMap::ParamsBlock(0, {});
+
+			PluginMap::ParamsBlock call(static_cast<uint32_t>(function->Size),
+				{ { "ReturnValue", 0, Fields::WaveSettingsSize.resolvedSize } });
+			if (!call)
+				return call;
+
+			// Marked native for the call and handed back as it was, the way the
+			// SDK's own wrappers call it.
+			const auto flags = function->FunctionFlags;
+			function->FunctionFlags |= 0x400;
+			const bool called = PluginMap::Call(ss, function, call);
+			function->FunctionFlags = flags;
+			return called ? std::move(call) : PluginMap::ParamsBlock(0, {});
+		}
 
 		// ---------------------------------------------------------------------
 		// UCrEnviroWaveTimerSubsystem: the fields below live inside the SDK's
@@ -275,7 +305,8 @@ namespace RuptureTimer
 				// GetCurrentStageSettings dereferences the stage pointer with no
 				// null check in the game, so it is only ever called behind
 				// IsWaveInProgress.
-				const SDK::FCrEnviroWaveSettings settings = ss->GetCurrentStageSettings();
+				PluginMap::ParamsBlock current = CurrentStageSettings(ss);
+				const uint8_t* settings = current.Param("ReturnValue");
 
 				const float duration = StageDuration(out.stage, settings);
 				if (duration > 0.0f)

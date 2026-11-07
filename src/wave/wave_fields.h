@@ -28,9 +28,10 @@ namespace RuptureTimer::Fields
 	inline auto FadeoutSubstage  = RUPTURETIMER_FIELD(UCrEnviroWaveSubsystem, CurrentFadeoutSubstage);
 	inline auto GrowbackSubstage = RUPTURETIMER_FIELD(UCrEnviroWaveSubsystem, CurrentGrowbackSubstage);
 
-	// GetCurrentStageSettings returns the struct by value, so its size is checked
-	// against the running build, and wave_model.cpp reads its members by name.
-	inline auto WaveSettingsSize = SR_SIZE_CHECK(FCrEnviroWaveSettings);
+	// GetCurrentStageSettings returns the struct by value, so the reader's
+	// parameter block is sized from the running build's value of this row
+	// (wave_reader.cpp), and wave_model.cpp reads the members by name, in place.
+	inline auto WaveSettingsSize = SR_SIZE(FCrEnviroWaveSettings);
 
 	inline auto WaveSpeed                     = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, WaveSpeed);
 	inline auto WaveStartPosition             = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, WaveStartPosition);
