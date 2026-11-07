@@ -4,6 +4,7 @@
 #include "Engine_classes.hpp"
 #include "Chimera_classes.hpp"
 #include "Chimera_structs.hpp"
+#include "Chimera_parameters.hpp"
 #include "plugin_map.h"
 
 #include <iterator>
@@ -29,9 +30,11 @@ namespace RuptureTimer::Fields
 	inline auto GrowbackSubstage = RUPTURETIMER_FIELD(UCrEnviroWaveSubsystem, CurrentGrowbackSubstage);
 
 	// GetCurrentStageSettings returns the struct by value, so the reader's
-	// parameter block is sized from the running build's value of this row
-	// (wave_reader.cpp), and wave_model.cpp reads the members by name, in place.
-	inline auto WaveSettingsSize = SR_SIZE(FCrEnviroWaveSettings);
+	// parameter block is the running build's: its size and the return value's
+	// offset and size come from these rows (wave_reader.cpp), and wave_model.cpp
+	// reads the members by name, in place.
+	inline auto StageSettingsSize   = SR_PARAMS_SIZE(CrEnviroWaveSubsystem, GetCurrentStageSettings);
+	inline auto StageSettingsReturn = SR_PARAM(CrEnviroWaveSubsystem, GetCurrentStageSettings, ReturnValue);
 
 	inline auto WaveSpeed                     = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, WaveSpeed);
 	inline auto WaveStartPosition             = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, WaveStartPosition);
@@ -84,7 +87,7 @@ namespace RuptureTimer::Fields
 	inline PluginMap::Feature WaveTimer{ "timer", "Rupture timer overlay",
 		KeysOf(WaveTimerActor, NextTime, NextPhase, Pause,
 		       PreWaveSubstage, FadeoutSubstage, GrowbackSubstage,
-		       WaveSettingsSize, WaveSpeed, WaveStartPosition, WaveEndPosition, PreWaveDuration,
+		       StageSettingsSize, StageSettingsReturn, WaveSpeed, WaveStartPosition, WaveEndPosition, PreWaveDuration,
 		       PreWaveExplosionDuration, FadeoutFireWaveDuration, FadeoutBurningDuration,
 		       FadeoutFadingDuration, GrowbackMoonPhaseDuration, GrowbackRegrowthStartDuration,
 		       GrowbackRegrowthDuration, TimerNextWaveTimer, TimerWaitingForNextWave, TimerStopWaves, TimerActor),
@@ -102,7 +105,7 @@ namespace RuptureTimer::Fields
 	{
 		bool all = PluginMap::ResolveFields(scanner, self,
 			WaveTimerActor, NextTime, NextPhase, Pause,
-			PreWaveSubstage, FadeoutSubstage, GrowbackSubstage, WaveSettingsSize,
+			PreWaveSubstage, FadeoutSubstage, GrowbackSubstage, StageSettingsSize, StageSettingsReturn,
 			WaveSpeed, WaveStartPosition, WaveEndPosition, PreWaveDuration, PreWaveExplosionDuration,
 			FadeoutFireWaveDuration, FadeoutBurningDuration, FadeoutFadingDuration, GrowbackMoonPhaseDuration,
 			GrowbackRegrowthStartDuration, GrowbackRegrowthDuration);

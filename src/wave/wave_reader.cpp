@@ -29,9 +29,9 @@ namespace RuptureTimer
 		// GetCurrentStageSettings returns FCrEnviroWaveSettings by value through
 		// ProcessEvent. The SDK's wrapper holds it as a compiled struct; this
 		// calls the function with a parameter block of the function's live size
-		// (PluginMap::ParamsBlock) and the struct the running build's size, so a
-		// build that resizes the struct does not turn the reader off. The struct
-		// is the function's only parameter, at offset 0 of the block, and the
+		// and the return value at the offset and size the running build
+		// reflects (PluginMap::ParamsBlockOf), so a build that resizes the
+		// struct or moves the parameter does not turn the reader off. The
 		// members are read in place from "ReturnValue". The block is empty when
 		// the function, the size or the call is not there.
 		PluginMap::ParamsBlock CurrentStageSettings(SDK::UCrEnviroWaveSubsystem* ss)
@@ -41,8 +41,8 @@ namespace RuptureTimer
 			if (!function)
 				return PluginMap::ParamsBlock(0, {});
 
-			PluginMap::ParamsBlock call(static_cast<uint32_t>(function->Size),
-				{ { "ReturnValue", 0, Fields::WaveSettingsSize.resolvedSize } });
+			PluginMap::ParamsBlock call = PluginMap::ParamsBlockOf(
+				Fields::StageSettingsSize, { &Fields::StageSettingsReturn });
 			if (!call)
 				return call;
 

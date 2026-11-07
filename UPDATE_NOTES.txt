@@ -1,1 +1,2 @@
 - The countdown follows the game's own wave timer on the host, so it no longer shows "Overdue" after loading a save
+- Reads the rupture's stage settings from the running game's function layout, so the timer keeps working after game updates
