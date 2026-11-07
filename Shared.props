@@ -8,7 +8,7 @@
        ============================================================ -->
   <PropertyGroup>
     <GameSDKRoot Condition="'$(GameSDKRoot)' == ''">..\..\StarRupture-Game-SDK</GameSDKRoot>
-    <PluginSDKInclude Condition="'$(PluginSDKInclude)' == ''">..\..\StarRupture-Plugin-SDK\include</PluginSDKInclude>
+    <PluginSDKInclude Condition="'$(PluginSDKInclude)' == ''">$(MSBuildThisFileDirectory)..\StarRupture-Plugin-SDK\include</PluginSDKInclude>
   </PropertyGroup>
 
   <!-- ============================================================
