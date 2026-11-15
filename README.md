@@ -152,18 +152,22 @@ Output lands at `build/<Configuration>/Plugins/RuptureTimer.dll`.
 ### Requirements
 
 - Visual Studio 2022 (MSVC v143, C++20)
-- [StarRupture-Plugin-SDK](https://github.com/AlienXAXS/StarRupture-Plugin-SDK) (with its `StarRupture SDK` submodule initialized)
+- [StarRupture-Plugin-SDK](https://github.com/AlienXAXS/StarRupture-Plugin-SDK)
 
-The Plugin SDK is consumed from a **sibling checkout** — it is not vendored into this repo:
+Put the plugin next to `StarRupture-Plugin-SDK` and clone both with `--recursive`, so the game SDK submodules come along:
+
+```
+git clone --recursive https://github.com/AlienXAXS/StarRupture-Plugin-SDK.git
+git clone --recursive https://github.com/AlienXAXS/StarRupture-Plugin-RuptureTimer.git
+```
 
 ```
 <parent folder>/
 ├── StarRupture-Plugin-SDK/
-└── StarRupture-Plugin-RuptureTimer/   <- this repo
+└── StarRupture-Plugin-RuptureTimer/
 ```
 
-Adjust [`Shared.props`](Shared.props) if your layout differs, or override on the command line with
-`/p:GameSDKRoot=... /p:PluginSDKInclude=...`.
+The game SDK comes from this plugin's own `StarRupture SDK` submodule when it has one, otherwise from the Plugin SDK's. To build against other folders, pass `/p:PluginSDKInclude=...` and `/p:GameSDKRoot=...` to msbuild.
 
 ## Layout
 
