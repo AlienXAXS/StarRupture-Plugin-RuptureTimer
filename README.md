@@ -167,7 +167,7 @@ git clone --recursive https://github.com/AlienXAXS/StarRupture-Plugin-RuptureTim
 └── StarRupture-Plugin-RuptureTimer/
 ```
 
-The game SDK comes from this plugin's own `StarRupture SDK` submodule when it has one, otherwise from the Plugin SDK's. To build against other folders, pass `/p:PluginSDKInclude=...` and `/p:GameSDKRoot=...` to msbuild.
+The game SDK comes from the Plugin SDK's `StarRupture SDK` submodule (hence the recursive clone of `StarRupture-Plugin-SDK`). To build against other folders, pass `/p:PluginSDKInclude=...` and `/p:GameSDKRoot=...` to msbuild.
 
 ## Layout
 
