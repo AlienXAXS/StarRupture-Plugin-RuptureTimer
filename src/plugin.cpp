@@ -2,6 +2,7 @@
 #include "plugin_helpers.h"
 #include "config/plugin_config.h"
 #include "net/wave_net.h"
+#include "net/wave_packet.h"
 #include "ui/overlay_widget.h"
 #include "ui/diagnostics_window.h"
 #include "debug/object_dumper.h"
@@ -44,6 +45,12 @@ static PluginInfo s_pluginInfo = {
 	PLUGIN_GAME_BUILT_CL,
 	PLUGIN_MAP_MIGRATED
 };
+
+// Wire id = the packet schema constant, so the two cannot drift apart: bump
+// kSchemaVersion in net/wave_packet.h when the packet layout changes and the
+// wire id follows. "0.11.0" is the released build, which declares nothing.
+static_assert(RuptureTimer::kSchemaVersion != 0, "wire id 0 means 'no wire id'");
+static const PluginWireInfo s_wireInfo = { RuptureTimer::kSchemaVersion, "0.11.0" };
 
 static bool g_isActive       = false;
 static bool g_tickRegistered = false;
@@ -168,6 +175,11 @@ extern "C" {
 	__declspec(dllexport) PluginInfo* GetPluginInfo()
 	{
 		return &s_pluginInfo;
+	}
+
+	__declspec(dllexport) const PluginWireInfo* GetPluginWireInfo()
+	{
+		return &s_wireInfo;
 	}
 
 	// Runs after GetPluginInfo and before PluginInit, and is the only context in
