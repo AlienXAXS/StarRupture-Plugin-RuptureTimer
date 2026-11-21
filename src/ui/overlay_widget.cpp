@@ -387,7 +387,7 @@ namespace RuptureTimer
 	void Overlay::Register()
 	{
 		auto* hooks = GetHooks();
-		if (!hooks || !hooks->UI || g_widget || !Fields::WaveTimer.On()) return;
+		if (!hooks || !hooks->UI || g_widget) return;
 
 		const Settings& cfg = Config::Get();
 		UpdateHints(cfg);

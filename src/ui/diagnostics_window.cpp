@@ -204,7 +204,7 @@ namespace RuptureTimer
 	void DiagnosticsWindow::Register()
 	{
 		auto* hooks = GetHooks();
-		if (!hooks || !hooks->UI || g_widget || !Fields::WaveTimer.On()) return;
+		if (!hooks || !hooks->UI || g_widget) return;
 
 		// Title bar, resize, move and scrollbar all stay on — this is a window the
 		// user reads and pokes at, not a HUD element.

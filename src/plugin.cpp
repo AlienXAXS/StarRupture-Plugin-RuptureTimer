@@ -88,6 +88,7 @@ static void SyncFeature()
 	}
 
 	LOG_INFO("The rupture timer is back on");
+	WaveActions::Request(WaveActions::Action::None);
 	BindKeys();
 	DiagnosticsWindow::ApplySettings();
 	if (g_isActive) Overlay::ApplySettings();
@@ -162,7 +163,7 @@ static void Activate()
 	BindKeys();
 
 	g_isActive = true;
-	LOG_INFO("RuptureTimer active");
+	LOG_INFO(RuptureTimer::Fields::WaveTimer.On() ? "RuptureTimer active" : "RuptureTimer active (timer off)");
 }
 
 static void Deactivate()
@@ -243,10 +244,10 @@ extern "C" {
 				return true;
 			}
 
-			// Off now does not mean off for good: the game build may lack a value it
-			// reads, or the server may have turned it off, and the server can turn
-			// it back on. Everything below is registered either way and idles
-			// while the timer is off; OnTick brings it up when it comes back.
+			// The server can only take a feature away, never give one back, so a
+			// build that lacks a value stays off for good. A server turn-off can be
+			// lifted, and the plugin cannot tell the two apart here, so everything
+			// below is registered either way and idles while the timer is off.
 			g_featureLive = RuptureTimer::Fields::WaveTimer.On();
 			if (!g_featureLive)
 				LOG_WARN("The rupture timer is off: the game update moved something it reads, or the server turned it off");
