@@ -1,3 +1,4 @@
+- A server host will be able to turn the timer off and back on while the game runs: no overlay, no wave data read, no packets sent or accepted. Not active yet: it needs a mod loader release with host rules, and until then nothing changes
 - The countdown follows the game's own wave timer on the host, so it no longer shows "Overdue" after loading a save
 - Building: plain Debug and Release build the Client configuration, and the game build number comes from the SDK headers instead of a fixed value
 - Needs mod loader v1.25.0 or newer
