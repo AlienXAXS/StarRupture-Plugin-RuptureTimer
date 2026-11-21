@@ -1,5 +1,5 @@
 - The countdown follows the game's own wave timer on the host, so it no longer shows "Overdue" after loading a save
 - Building: plain Debug and Release build the Client configuration, and the game build number comes from the SDK headers instead of a fixed value
 - Needs mod loader v1.25.0 or newer
-- Dedicated server: reads its game values from the version object map when the mod loader has rows for that server build, the same as the client; otherwise it uses its own patterns as before
+- Dedicated server: reads its game values from the version object map when the mod loader has rows for that server build, the same as the client; otherwise it finds those values itself, as before
 - Dedicated server: the plugin keeps the right world after a map change
