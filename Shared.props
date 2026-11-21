@@ -16,7 +16,7 @@
        Points to the SDK subdirectory containing Basic.cpp,
        CoreUObject_functions.cpp and Engine_functions.cpp.
        ============================================================ -->
-  <PropertyGroup Condition="'$(Configuration)' == 'Client Debug' Or '$(Configuration)' == 'Client Release'">
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'Release' Or '$(Configuration)' == 'Client Debug' Or '$(Configuration)' == 'Client Release'">
     <StarRuptureSDKSourceDir>$(GameSDKRoot)\Client\SDK\</StarRuptureSDKSourceDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Server Debug' Or '$(Configuration)' == 'Server Release'">
@@ -27,7 +27,7 @@
        StarRuptureSDKConfigDir
        Additional include directories for Client/Server builds.
        ============================================================ -->
-  <PropertyGroup Condition="'$(Configuration)' == 'Client Debug' Or '$(Configuration)' == 'Client Release'">
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'Release' Or '$(Configuration)' == 'Client Debug' Or '$(Configuration)' == 'Client Release'">
     <StarRuptureSDKConfigDir>$(GameSDKRoot)\Client\;$(GameSDKRoot)\Client\SDK\</StarRuptureSDKConfigDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Server Debug' Or '$(Configuration)' == 'Server Release'">
@@ -37,7 +37,7 @@
   <!-- ============================================================
        MODLOADER_CLIENT_BUILD / MODLOADER_SERVER_BUILD
        ============================================================ -->
-  <ItemDefinitionGroup Condition="'$(Configuration)' == 'Client Debug' Or '$(Configuration)' == 'Client Release'">
+  <ItemDefinitionGroup Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'Release' Or '$(Configuration)' == 'Client Debug' Or '$(Configuration)' == 'Client Release'">
     <ClCompile>
       <PreprocessorDefinitions>MODLOADER_CLIENT_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -59,12 +59,11 @@
     </ClCompile>
   </ItemDefinitionGroup>
 
-  <!-- PLUGIN_GAME_BUILT_CL: the game build this plugin's own candidate rows are for.
-       CI or tools\sr-update.ps1 can pass /p:PluginGameBuiltCL=<CL> instead. See
-       PluginGameBuild.props in the Plugin SDK. -->
-  <PropertyGroup>
-    <PluginGameBuiltCL Condition="'$(PluginGameBuiltCL)' == ''">127004</PluginGameBuiltCL>
-  </PropertyGroup>
+  <!-- PLUGIN_GAME_BUILT_CL: the game build the Game-SDK was generated from, read by
+       PluginGameBuild.props (Plugin SDK) from the build_cl.txt beside the Client\ or
+       Server\ SDK the configuration compiles against. It is not pinned here, so it
+       follows the headers actually used; a build can still pass
+       /p:PluginGameBuiltCL=<CL>. -->
   <Import Project="$(PluginSDKInclude)\..\PluginGameBuild.props"
           Condition="Exists('$(PluginSDKInclude)\..\PluginGameBuild.props')" />
 
