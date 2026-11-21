@@ -3,3 +3,4 @@
 - Needs mod loader v1.25.0 or newer
 - Dedicated server: reads its game values from the version object map when the mod loader has rows for that server build, the same as the client; otherwise it finds those values itself, as before
 - Dedicated server: the plugin keeps the right world after a map change
+- The log now notes when the first wave timer update from the server arrives on a client

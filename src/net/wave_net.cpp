@@ -186,8 +186,17 @@ namespace RuptureTimer
 			g_display.hasData    = true;
 			g_display.stale      = false;
 			g_display.waitReason = WaitReason::None;
-			++g_display.packetsReceived;
 			g_lastPacketTime = NowSeconds();
+
+			// The counter restarts with every world, so this is the one line that
+			// shows the server's wave data reached this client.
+			if (++g_display.packetsReceived == 1)
+			{
+				const WaveSnapshot& snap = g_display.snapshot;
+				LOG_INFO("First wave update from server: seq %u, stage %s, next wave in %.1fs%s",
+					p.sequence, StageName(snap.stage), snap.nextWaveIn,
+					snap.nextWaveTimeValid ? "" : " (not valid)");
+			}
 		}
 
 		void OnHelloPacket(void* senderPC, const RuptureHelloPacket& p)
