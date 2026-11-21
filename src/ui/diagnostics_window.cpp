@@ -19,6 +19,7 @@ namespace RuptureTimer
 #include "net/wave_net.h"
 #include "config/plugin_config.h"
 #include "plugin_helpers.h"
+#include "wave/wave_fields.h"
 
 #include <cstdarg>
 #include <cstdio>
@@ -72,6 +73,8 @@ namespace RuptureTimer
 
 		void Render(IModLoaderImGui* ui)
 		{
+			if (!Fields::WaveTimer.On()) return;
+
 			const DisplayState  st  = WaveNet::GetDisplayState();
 			const WaveSnapshot& s   = st.snapshot;
 			const Settings&     cfg = Config::Get();
@@ -201,7 +204,7 @@ namespace RuptureTimer
 	void DiagnosticsWindow::Register()
 	{
 		auto* hooks = GetHooks();
-		if (!hooks || !hooks->UI || g_widget) return;
+		if (!hooks || !hooks->UI || g_widget || !Fields::WaveTimer.On()) return;
 
 		// Title bar, resize, move and scrollbar all stay on — this is a window the
 		// user reads and pokes at, not a HUD element.
@@ -247,7 +250,7 @@ namespace RuptureTimer
 	{
 		const Settings& cfg = Config::Get();
 
-		if (!cfg.enabled)
+		if (!cfg.enabled || !Fields::WaveTimer.On())
 		{
 			Unregister();
 			return;
@@ -266,7 +269,7 @@ namespace RuptureTimer
 	void DiagnosticsWindow::Toggle()
 	{
 		auto* hooks = GetHooks();
-		if (!hooks || !hooks->UI || !g_widget) return;
+		if (!hooks || !hooks->UI || !g_widget || !Fields::WaveTimer.On()) return;
 
 		g_visible = !g_visible;
 		hooks->UI->SetWidgetVisible(g_widget, g_visible);

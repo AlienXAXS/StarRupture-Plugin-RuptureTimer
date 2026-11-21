@@ -78,8 +78,10 @@ namespace RuptureTimer::Fields
 	using PluginMap::ValueOr;
 
 	// The whole timer reads these members, so the plugin has one feature. Off,
-	// the plugin loads but reads no wave state, shows no overlay and draws
-	// nothing; the overlay and network config entries are greyed out.
+	// the plugin loads but reads no wave state, shows no overlay, draws nothing
+	// and sends and accepts no wave packets; the overlay and network config
+	// entries are greyed out. The loader flips it for a missing member, and a
+	// server host can flip it too, so it is read live and not once at start.
 	inline PluginMap::Feature WaveTimer{ "timer", "Rupture timer overlay",
 		KeysOf(WaveTimerActor, NextTime, NextPhase, Pause,
 		       PreWaveSubstage, FadeoutSubstage, GrowbackSubstage,

@@ -19,6 +19,7 @@ namespace RuptureTimer
 #include "net/wave_net.h"
 #include "config/plugin_config.h"
 #include "plugin_helpers.h"
+#include "wave/wave_fields.h"
 
 #include <cstdio>
 #include <cstring>
@@ -346,7 +347,7 @@ namespace RuptureTimer
 		void Render(IModLoaderImGui* ui)
 		{
 			const Settings& cfg = Config::Get();
-			if (!cfg.enabled || !cfg.showOverlay) return;
+			if (!cfg.enabled || !cfg.showOverlay || !Fields::WaveTimer.On()) return;
 
 			const DisplayState st = WaveNet::GetDisplayState();
 
@@ -386,7 +387,7 @@ namespace RuptureTimer
 	void Overlay::Register()
 	{
 		auto* hooks = GetHooks();
-		if (!hooks || !hooks->UI || g_widget) return;
+		if (!hooks || !hooks->UI || g_widget || !Fields::WaveTimer.On()) return;
 
 		const Settings& cfg = Config::Get();
 		UpdateHints(cfg);
@@ -428,7 +429,7 @@ namespace RuptureTimer
 
 		const Settings& cfg = Config::Get();
 
-		if (!cfg.enabled)
+		if (!cfg.enabled || !Fields::WaveTimer.On())
 		{
 			Unregister();
 			return;
@@ -450,7 +451,7 @@ namespace RuptureTimer
 	void Overlay::Toggle()
 	{
 		auto* hooks = GetHooks();
-		if (!hooks || !hooks->UI || !g_widget) return;
+		if (!hooks || !hooks->UI || !g_widget || !Fields::WaveTimer.On()) return;
 
 		g_visible = !g_visible;
 		hooks->UI->SetWidgetVisible(g_widget, g_visible);

@@ -54,11 +54,49 @@ static const PluginWireInfo s_wireInfo = { RuptureTimer::kSchemaVersion, "0.11.0
 
 static bool g_isActive       = false;
 static bool g_tickRegistered = false;
+
+// What PluginInit actually registered, so PluginShutdown undoes exactly that
+// whatever the server has since done to the feature flag.
+static bool g_initRan = false;
+
+// The state of the timer feature the overlay, keys and network wiring were last
+// set up for. OnTick compares it with the live flag to act on each flip.
+static bool g_featureLive = false;
 static char g_boundOverlayKey[32] = "";
+
+static void BindKeys();
+static void UnbindKeys();
+
+// The server can turn the timer off and back on while the game runs. Off: take
+// every window and key down and drop the session, so nothing draws and nothing
+// is sent. On: bring back what the current settings ask for. Game thread.
+static void SyncFeature()
+{
+	const bool on = RuptureTimer::Fields::WaveTimer.On();
+	if (on == g_featureLive) return;
+	g_featureLive = on;
+
+	if (!on)
+	{
+		LOG_INFO("The rupture timer was turned off");
+		UnbindKeys();
+		Overlay::Unregister();
+		DiagnosticsWindow::Unregister();
+		WaveActions::Request(WaveActions::Action::None);
+		WaveNet::ResetSession();
+		return;
+	}
+
+	LOG_INFO("The rupture timer is back on");
+	BindKeys();
+	DiagnosticsWindow::ApplySettings();
+	if (g_isActive) Overlay::ApplySettings();
+}
 
 static void OnTick(float deltaSeconds)
 {
-	if (!g_isActive) return;
+	SyncFeature();
+	if (!g_isActive || !RuptureTimer::Fields::WaveTimer.On()) return;
 	WaveNet::Tick(deltaSeconds);
 
 	// Game thread: walking GObjects and reading UObject reflection cannot be
@@ -73,6 +111,8 @@ static void OnOverlayKey(EModKey, EModKeyEvent) { Overlay::Toggle(); }
 // an unrelated key doesn't churn the registry.
 static void BindKeys()
 {
+	if (!RuptureTimer::Fields::WaveTimer.On()) return;
+
 	auto* hooks = GetHooks();
 	if (!hooks || !hooks->Input) return;
 
@@ -117,13 +157,6 @@ static void Activate()
 	if (g_isActive) return;
 
 	WaveNet::ResetSession();
-
-	auto* hooks = GetHooks();
-	if (hooks && hooks->Engine && !g_tickRegistered)
-	{
-		hooks->Engine->RegisterOnTick(&OnTick);
-		g_tickRegistered = true;
-	}
 
 	Overlay::ApplySettings();
 	BindKeys();
@@ -210,19 +243,30 @@ extern "C" {
 				return true;
 			}
 
-			if (!RuptureTimer::Fields::WaveTimer.On())
-			{
-				LOG_WARN("The rupture timer is off: the game update moved something it reads");
-				return true;
-			}
-
-			WaveNet::Initialize();
+			// Off now does not mean off for good: the game build may lack a value it
+			// reads, or the server may have turned it off, and the server can turn
+			// it back on. Everything below is registered either way and idles
+			// while the timer is off; OnTick brings it up when it comes back.
+			g_featureLive = RuptureTimer::Fields::WaveTimer.On();
+			if (!g_featureLive)
+				LOG_WARN("The rupture timer is off: the game update moved something it reads, or the server turned it off");
 
 			auto* hooks = self->hooks;
 			if (!hooks || !hooks->World)
 			{
 				LOG_ERROR("World hooks unavailable — cannot track the wave");
 				return false;
+			}
+
+			WaveNet::Initialize();
+			g_initRan = true;
+
+			// The tick watches for the server turning the timer off or on, so it
+			// runs from here and not only while a world is up.
+			if (hooks->Engine && !g_tickRegistered)
+			{
+				hooks->Engine->RegisterOnTick(&OnTick);
+				g_tickRegistered = true;
 			}
 
 			hooks->World->RegisterOnAnyWorldBeginPlay(&OnWorldBeginPlay);
@@ -280,7 +324,8 @@ extern "C" {
 
 		g_isActive = false;
 
-		if (g_self && g_self->hooks)
+		// Only what PluginInit registered, not what the feature flag says now.
+		if (g_self && g_self->hooks && g_initRan)
 		{
 			auto* hooks = g_self->hooks;
 
@@ -307,6 +352,7 @@ extern "C" {
 		Overlay::Unregister();
 		WaveNet::Shutdown();
 
+		g_initRan = false;
 		g_self = nullptr;
 	}
 

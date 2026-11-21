@@ -4,6 +4,7 @@
 #include "wave/wave_model.h"
 #include "config/plugin_config.h"
 #include "plugin_helpers.h"
+#include "wave/wave_fields.h"
 
 #include "plugin_network_helpers.h"
 
@@ -161,7 +162,7 @@ namespace RuptureTimer
 		{
 			auto* self  = GetSelf();
 			auto* hooks = GetHooks();
-			if (!self || !hooks || !hooks->Network) return;
+			if (!self || !hooks || !hooks->Network || !Fields::WaveTimer.On()) return;
 
 			const RuptureWavePacket p = Encode(s, ++g_sequence);
 			Network::SendPacketToAllClients(hooks, self, p);
@@ -173,6 +174,8 @@ namespace RuptureTimer
 
 		void OnWavePacket(const RuptureWavePacket& p)
 		{
+			if (!Fields::WaveTimer.On()) return;
+
 			if (p.schemaVersion != kSchemaVersion)
 			{
 				LOG_WARN("Dropped wave packet with schema %u (expected %u) — server and client plugin versions differ",
@@ -201,7 +204,7 @@ namespace RuptureTimer
 
 		void OnHelloPacket(void* senderPC, const RuptureHelloPacket& p)
 		{
-			if (p.schemaVersion != kSchemaVersion) return;
+			if (!Fields::WaveTimer.On() || p.schemaVersion != kSchemaVersion) return;
 			WaveNet::SendSnapshotTo(senderPC);
 		}
 
@@ -209,7 +212,7 @@ namespace RuptureTimer
 		{
 			auto* self  = GetSelf();
 			auto* hooks = GetHooks();
-			if (!self || !hooks || !hooks->Network) return;
+			if (!self || !hooks || !hooks->Network || !Fields::WaveTimer.On()) return;
 
 			const RuptureHelloPacket hello{ kSchemaVersion, { 0, 0, 0 } };
 			Network::SendPacketToServer(hooks, self, hello);
@@ -221,7 +224,7 @@ namespace RuptureTimer
 		// snapshot has to be sent from here and from nowhere earlier.
 		void OnClientReady(void* playerController)
 		{
-			if (!playerController) return;
+			if (!playerController || !Fields::WaveTimer.On()) return;
 
 			{
 				std::lock_guard<std::mutex> lk(g_mutex);
@@ -370,7 +373,7 @@ namespace RuptureTimer
 	{
 		auto* self  = GetSelf();
 		auto* hooks = GetHooks();
-		if (!self || !hooks || !hooks->Network || !playerController) return;
+		if (!self || !hooks || !hooks->Network || !playerController || !Fields::WaveTimer.On()) return;
 		if (!RoleHasAuthority(g_role) || !g_hasSentAnything) return;
 
 		// The same predicate SendPacketToClient gates on. Checking it here keeps
@@ -387,7 +390,7 @@ namespace RuptureTimer
 	void WaveNet::Tick(float deltaSeconds)
 	{
 		auto* hooks = GetHooks();
-		if (!hooks) return;
+		if (!hooks || !Fields::WaveTimer.On()) return;
 
 		// Net mode only resolves once an actor exists, so keep asking until it does
 		// rather than assuming a role and drawing the wrong thing.
