@@ -204,7 +204,7 @@ Found a bug? [Report it on GitHub](https://github.com/AlienXAXS/StarRupture-Plug
 
 ## A server can turn the timer off (not active yet)
 
-A server host will be able to switch the timer off for the whole server, and back on, without a restart. While it is off the plugin shows no overlay or diagnostics window, ignores its toggle key, reads no wave data, and sends and accepts no wave packets, so clients see the waiting card. It writes nothing to the game, so there is nothing to undo. Turning it back on brings everything back.
+A server host will be able to switch the timer off for the whole server, and back on, without a restart. While it is off the plugin shows no overlay or diagnostics window, ignores its toggle key, reads no wave data, and sends and accepts no wave packets, so players whose mod loader has host rules lose the overlay too, and players on an older mod loader see the waiting card. It writes nothing to the game, so there is nothing to undo. Turning it back on brings everything back.
 
 This is not active yet: it needs a mod loader release with host rules, which is not out. Until then nothing changes. With a mod loader that has it, the host runs `features hostoff AxRuptureTimer timer` in the server console, and `features hostclear` to lift it.
 
