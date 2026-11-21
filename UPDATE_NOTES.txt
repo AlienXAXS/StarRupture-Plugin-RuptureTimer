@@ -1,1 +1,2 @@
 - The countdown follows the game's own wave timer on the host, so it no longer shows "Overdue" after loading a save
+- Building: plain Debug and Release build the Client configuration, and the game build number comes from the SDK headers instead of a fixed value
