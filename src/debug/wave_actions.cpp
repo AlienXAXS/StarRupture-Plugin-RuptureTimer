@@ -15,6 +15,7 @@ namespace RuptureTimer
 
 #include "Engine_classes.hpp"
 #include "Chimera_classes.hpp"
+#include "plugin_map.h"
 
 #include <atomic>
 

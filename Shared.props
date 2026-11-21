@@ -7,8 +7,8 @@
        Override in CI via /p:GameSDKRoot=... /p:PluginSDKInclude=...
        ============================================================ -->
   <PropertyGroup>
-    <GameSDKRoot Condition="'$(GameSDKRoot)' == ''">..\..\StarRupture-Game-SDK</GameSDKRoot>
-    <PluginSDKInclude Condition="'$(PluginSDKInclude)' == ''">..\..\StarRupture-Plugin-SDK\include</PluginSDKInclude>
+    <GameSDKRoot Condition="'$(GameSDKRoot)' == ''">$(MSBuildThisFileDirectory)..\StarRupture-Game-SDK</GameSDKRoot>
+    <PluginSDKInclude Condition="'$(PluginSDKInclude)' == ''">$(MSBuildThisFileDirectory)..\StarRupture-Plugin-SDK\include</PluginSDKInclude>
   </PropertyGroup>
 
   <!-- ============================================================
@@ -16,7 +16,7 @@
        Points to the SDK subdirectory containing Basic.cpp,
        CoreUObject_functions.cpp and Engine_functions.cpp.
        ============================================================ -->
-  <PropertyGroup Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'Release' Or '$(Configuration)' == 'Client Debug' Or '$(Configuration)' == 'Client Release'">
+  <PropertyGroup Condition="'$(Configuration)' == 'Client Debug' Or '$(Configuration)' == 'Client Release'">
     <StarRuptureSDKSourceDir>$(GameSDKRoot)\Client\SDK\</StarRuptureSDKSourceDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Server Debug' Or '$(Configuration)' == 'Server Release'">
@@ -27,7 +27,7 @@
        StarRuptureSDKConfigDir
        Additional include directories for Client/Server builds.
        ============================================================ -->
-  <PropertyGroup Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'Release' Or '$(Configuration)' == 'Client Debug' Or '$(Configuration)' == 'Client Release'">
+  <PropertyGroup Condition="'$(Configuration)' == 'Client Debug' Or '$(Configuration)' == 'Client Release'">
     <StarRuptureSDKConfigDir>$(GameSDKRoot)\Client\;$(GameSDKRoot)\Client\SDK\</StarRuptureSDKConfigDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Server Debug' Or '$(Configuration)' == 'Server Release'">
@@ -37,7 +37,7 @@
   <!-- ============================================================
        MODLOADER_CLIENT_BUILD / MODLOADER_SERVER_BUILD
        ============================================================ -->
-  <ItemDefinitionGroup Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'Release' Or '$(Configuration)' == 'Client Debug' Or '$(Configuration)' == 'Client Release'">
+  <ItemDefinitionGroup Condition="'$(Configuration)' == 'Client Debug' Or '$(Configuration)' == 'Client Release'">
     <ClCompile>
       <PreprocessorDefinitions>MODLOADER_CLIENT_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
