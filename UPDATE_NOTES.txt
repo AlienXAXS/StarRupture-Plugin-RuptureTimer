@@ -1,1 +1,2 @@
 - The countdown follows the game's own wave timer on the host, so it no longer shows "Overdue" after loading a save
+- Now loads on ModLoader v1.23.0 and newer
