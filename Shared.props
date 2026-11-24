@@ -44,7 +44,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)' == 'Server Debug' Or '$(Configuration)' == 'Server Release'">
     <ClCompile>
-      <PreprocessorDefinitions>MODLOADER_SERVER_BUILD;PLUGIN_NEEDS_INTERFACE=73;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MODLOADER_SERVER_BUILD;PLUGIN_NEEDS_INTERFACE=74;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
 
