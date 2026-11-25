@@ -6,7 +6,6 @@
 #include "Chimera_structs.hpp"
 #include "plugin_map.h"
 
-#include <iterator>
 #include <vector>
 
 // Every member of a game class the wave reader reads, taken from the loader's
@@ -45,12 +44,13 @@ namespace RuptureTimer::Fields
 	inline auto GrowbackRegrowthDuration      = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, WaveGrowbackRegrowthDuration);
 
 	// UCrEnviroWaveTimerSubsystem's members sit inside the SDK's Pad_30[0x60], so
-	// they have no names there: native rows. The rows below are CL-127004's, the
-	// build this plugin was compiled against; every other build comes from the
-	// loader's map. WaitingDuration (0x78) is not a member any more on
+	// they have no names there: native rows, served by the loader's map for the
+	// running game build, with no rows of our own. A build the map has no row for
+	// turns the timer off. WaitingDuration (0x78) is not a member any more on
 	// CL-128786, so it is not requested. NextWaveTimer is the live countdown:
 	// the subsystem's Tick decrements it while bWaitingForNextWave is set and
-	// waves are not paused.
+	// waves are not paused. The last number in each row is the offset the loader's
+	// map also holds for the build the plugin's SDK was generated for.
 	inline auto TimerNextWaveTimer = PluginField<float>{ { "UCrEnviroWaveTimerSubsystem::NextWaveTimer",
 		"UCrEnviroWaveTimerSubsystem", "NextWaveTimer", PLUGIN_FIELD_NATIVE, sizeof(float), 0x7C } };
 	inline auto TimerWaitingForNextWave = PluginField<bool>{ { "UCrEnviroWaveTimerSubsystem::bWaitingForNextWave",
@@ -59,19 +59,6 @@ namespace RuptureTimer::Fields
 		"UCrEnviroWaveTimerSubsystem", "bStopWaves", PLUGIN_FIELD_NATIVE, sizeof(bool), 0x83 } };
 	inline auto TimerActor = PluginField<SDK::ACrWaveTimerActor*>{ { "UCrEnviroWaveTimerSubsystem::TimerActor",
 		"UCrEnviroWaveTimerSubsystem", "TimerActor", PLUGIN_FIELD_NATIVE, sizeof(void*), 0x90 } };
-
-	inline const PluginFieldCandidate kNextWaveTimerRows[] = {
-		{ 127004, 0x7C, sizeof(float), 0, nullptr },
-	};
-	inline const PluginFieldCandidate kWaitingForNextWaveRows[] = {
-		{ 127004, 0x80, sizeof(bool), 0, nullptr },
-	};
-	inline const PluginFieldCandidate kStopWavesRows[] = {
-		{ 127004, 0x83, sizeof(bool), 0, nullptr },
-	};
-	inline const PluginFieldCandidate kTimerActorRows[] = {
-		{ 127004, 0x90, sizeof(void*), 0, nullptr },
-	};
 
 	// The SDK's helpers, under the names the plugin uses.
 	using PluginMap::KeysOf;
@@ -101,16 +88,12 @@ namespace RuptureTimer::Fields
 	// loader has then recorded the failure and refuses the plugin.
 	inline bool Resolve(IPluginSelf* self, IPluginHookScanner* scanner)
 	{
-		bool all = PluginMap::ResolveFields(scanner, self,
+		return PluginMap::ResolveFields(scanner, self,
 			WaveTimerActor, NextTime, NextPhase, Pause,
 			PreWaveSubstage, FadeoutSubstage, GrowbackSubstage, WaveSettingsSize,
 			WaveSpeed, WaveStartPosition, WaveEndPosition, PreWaveDuration, PreWaveExplosionDuration,
 			FadeoutFireWaveDuration, FadeoutBurningDuration, FadeoutFadingDuration, GrowbackMoonPhaseDuration,
-			GrowbackRegrowthStartDuration, GrowbackRegrowthDuration);
-		all = PluginMap::ResolveField(scanner, self, TimerNextWaveTimer, kNextWaveTimerRows, static_cast<uint32_t>(std::size(kNextWaveTimerRows))) && all;
-		all = PluginMap::ResolveField(scanner, self, TimerWaitingForNextWave, kWaitingForNextWaveRows, static_cast<uint32_t>(std::size(kWaitingForNextWaveRows))) && all;
-		all = PluginMap::ResolveField(scanner, self, TimerStopWaves, kStopWavesRows, static_cast<uint32_t>(std::size(kStopWavesRows))) && all;
-		all = PluginMap::ResolveField(scanner, self, TimerActor, kTimerActorRows, static_cast<uint32_t>(std::size(kTimerActorRows))) && all;
-		return all;
+			GrowbackRegrowthStartDuration, GrowbackRegrowthDuration,
+			TimerNextWaveTimer, TimerWaitingForNextWave, TimerStopWaves, TimerActor);
 	}
 }
