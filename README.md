@@ -68,7 +68,7 @@ a negative or invented number.
 
 ## Installation
 
-Requires [StarRupture-ModLoader](https://github.com/AlienXAXS/StarRupture-ModLoader) v1.25.0 or later.
+Requires [StarRupture-ModLoader](https://github.com/AlienXAXS/StarRupture-ModLoader) v1.23.0 or later.
 
 On a dedicated server, keep the mod loader up to date. It carries the version object map rows for each server build. On a server build it has no rows for, the plugin finds those values itself, as before.
 
