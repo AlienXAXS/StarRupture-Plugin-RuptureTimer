@@ -1,6 +1,5 @@
 - A server host can turn the timer off and back on while the game runs: no overlay, no wave data read, no packets sent or accepted. Needs mod loader v1.27.0 or newer
 - Building: plain Debug and Release build the Client configuration, and the game build number comes from the SDK headers instead of a fixed value
 - Needs mod loader v1.23.0 or newer
-- Dedicated server: reads its game values from the version object map, so it needs mod loader v1.27.0 or newer, which carries the rows for each server build. On a server build the loader has no rows for, the timer stays off
-- Dedicated server: the plugin keeps the right world after a map change
+- Dedicated server: the timer needs mod loader v1.27.0 or newer. It reads its game values from the version object map, and that loader carries the rows for each server build. On a server build the loader has no rows for, the timer stays off
 - The log now notes when the first wave timer update from the server arrives on a client

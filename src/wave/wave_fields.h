@@ -49,16 +49,15 @@ namespace RuptureTimer::Fields
 	// turns the timer off. WaitingDuration (0x78) is not a member any more on
 	// CL-128786, so it is not requested. NextWaveTimer is the live countdown:
 	// the subsystem's Tick decrements it while bWaitingForNextWave is set and
-	// waves are not paused. The last number in each row is the offset the loader's
-	// map also holds for the build the plugin's SDK was generated for.
+	// waves are not paused.
 	inline auto TimerNextWaveTimer = PluginField<float>{ { "UCrEnviroWaveTimerSubsystem::NextWaveTimer",
-		"UCrEnviroWaveTimerSubsystem", "NextWaveTimer", PLUGIN_FIELD_NATIVE, sizeof(float), 0x7C } };
+		"UCrEnviroWaveTimerSubsystem", "NextWaveTimer", PLUGIN_FIELD_NATIVE, sizeof(float), -1 } };
 	inline auto TimerWaitingForNextWave = PluginField<bool>{ { "UCrEnviroWaveTimerSubsystem::bWaitingForNextWave",
-		"UCrEnviroWaveTimerSubsystem", "bWaitingForNextWave", PLUGIN_FIELD_NATIVE, sizeof(bool), 0x80 } };
+		"UCrEnviroWaveTimerSubsystem", "bWaitingForNextWave", PLUGIN_FIELD_NATIVE, sizeof(bool), -1 } };
 	inline auto TimerStopWaves = PluginField<bool>{ { "UCrEnviroWaveTimerSubsystem::bStopWaves",
-		"UCrEnviroWaveTimerSubsystem", "bStopWaves", PLUGIN_FIELD_NATIVE, sizeof(bool), 0x83 } };
+		"UCrEnviroWaveTimerSubsystem", "bStopWaves", PLUGIN_FIELD_NATIVE, sizeof(bool), -1 } };
 	inline auto TimerActor = PluginField<SDK::ACrWaveTimerActor*>{ { "UCrEnviroWaveTimerSubsystem::TimerActor",
-		"UCrEnviroWaveTimerSubsystem", "TimerActor", PLUGIN_FIELD_NATIVE, sizeof(void*), 0x90 } };
+		"UCrEnviroWaveTimerSubsystem", "TimerActor", PLUGIN_FIELD_NATIVE, sizeof(void*), -1 } };
 
 	// The SDK's helpers, under the names the plugin uses.
 	using PluginMap::KeysOf;

@@ -70,7 +70,7 @@ a negative or invented number.
 
 Requires [StarRupture-ModLoader](https://github.com/AlienXAXS/StarRupture-ModLoader) v1.23.0 or later.
 
-On a dedicated server, use mod loader v1.27.0 or newer and keep it up to date. It carries the version object map rows for each server build, and the plugin reads its game values from them. On a server build the loader has no rows for, the timer stays off.
+The timer on a dedicated server needs mod loader v1.27.0 or newer (on a client, v1.23.0 or newer is enough). Keep the mod loader up to date: it carries the version object map rows for each server build, and the plugin reads its game values from them. On a server build the loader has no rows for, the timer stays off.
 
 Copy the matching DLL into the game's `Plugins/` directory next to `dwmapi.dll`:
 
