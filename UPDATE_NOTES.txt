@@ -2,3 +2,4 @@
 - Needs mod loader v1.23.0 or newer
 - Dedicated server: the timer needs mod loader v1.27.0 or newer. It reads its game values from the version object map, and that loader carries the rows for each server build. On a server build the loader has no rows for, the timer stays off
 - The log now notes when the first wave timer update from the server arrives on a client
+- You can now install and update it from the mod loader's Browse list.
